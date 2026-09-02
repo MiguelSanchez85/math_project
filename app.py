@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import streamlit as st
 
-# Intenta importar la conexión de Google Sheets, si no está configurada usará modo local sin fallar
+# Intenta importar la conexión de Google Sheets
 try:
     from streamlit_gsheets import GSheetsConnection
     HAS_GSHEETS = True
@@ -28,7 +28,7 @@ AVATAR_ESCOLAR_BASE64 = cargar_imagen_base64("avatar_base.png")
 LOGO_COLEGIO_BASE64 = cargar_imagen_base64("logo_colegio.png")
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y ESTILOS
+# 1. CONFIGURACIÓN DE PÁGINA
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Math Quest: Guardianes del Número",
@@ -38,9 +38,319 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# GENERADORES DE RETOS INFINITOS
+# 2. CSS REDISEÑADO: GAMIFIED KIDS UI/UX (ESTILO DUOLINGO / KIDS GAME)
 # -----------------------------------------------------------------------------
-def nuevo_reto_operaciones():
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap');
+
+    /* CONFIGURACIÓN GENERAL */
+    html, body, [class*="css"], .stApp {
+        font-family: 'Fredoka', 'Nunito', -apple-system, sans-serif !important;
+        background-color: #f0f9ff !important; /* Azul cielo suave de juego */
+        color: #1e293b !important;
+        -webkit-font-smoothing: antialiased !important;
+    }
+
+    /* BARRA LATERAL ESTILIZADA */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff !important;
+        border-right: 3px solid #e0f2fe !important;
+        box-shadow: 4px 0px 15px rgba(0,0,0,0.03);
+    }
+
+    .logo-container {
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+        border: 3px solid #bbf7d0;
+        border-radius: 24px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+        margin-bottom: 24px;
+    }
+
+    .logo-img {
+        max-width: 140px;
+        height: auto;
+    }
+
+    /* BARRA SUPERIOR DE ESTADÍSTICAS (HUD) */
+    .hud-card {
+        background: #ffffff;
+        border: 3px solid #e2e8f0;
+        border-bottom: 6px solid #cbd5e1;
+        border-radius: 20px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    /* PESTAÑAS (TABS NAVEGACIÓN) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+        padding-bottom: 8px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        background-color: #ffffff !important;
+        border-radius: 16px !important;
+        border: 2px solid #cbd5e1 !important;
+        border-bottom: 5px solid #cbd5e1 !important;
+        padding: 10px 18px !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        color: #64748b !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        transform: translateY(-2px);
+        border-color: #38bdf8 !important;
+        color: #0284c7 !important;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: #6366f1 !important;
+        border-color: #4f46e5 !important;
+        border-bottom: 5px solid #3730a3 !important;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+    }
+    
+    .stTabs [aria-selected="true"] p, 
+    .stTabs [aria-selected="true"] span {
+        color: #ffffff !important;
+    }
+
+    /* TARJETA PRINCIPAL DE LA PREGUNTA (ESTILO GAME CARD) */
+    .question-card {
+        background: #ffffff !important;
+        border: 3px solid #e0e7ff !important;
+        border-bottom: 8px solid #c7d2fe !important;
+        border-radius: 28px !important;
+        padding: 28px !important;
+        text-align: center !important;
+        font-size: 21px !important;
+        font-weight: 600 !important;
+        color: #1e1b4b !important;
+        box-shadow: 0 12px 24px -6px rgba(99, 102, 241, 0.08) !important;
+        margin-bottom: 24px !important;
+        line-height: 1.6 !important;
+        position: relative;
+    }
+
+    .question-badge {
+        display: inline-block;
+        background: #e0e7ff;
+        color: #4338ca;
+        font-weight: 800;
+        font-size: 13px;
+        padding: 4px 14px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+    }
+
+    .highlight-text {
+        color: #4f46e5 !important;
+        font-weight: 800 !important;
+        background: #f5f3ff;
+        padding: 2px 8px;
+        border-radius: 8px;
+    }
+
+    /* CAJA DE PISTA Y EXPLICACIÓN (CPA) */
+    .cpa-box {
+        background-color: #f0fdf4 !important;
+        border: 3px solid #bbf7d0 !important;
+        border-bottom: 6px solid #86efac !important;
+        border-radius: 22px;
+        padding: 20px;
+        margin: 20px 0;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #14532d !important;
+    }
+
+    /* BOTONES INTERACTIVOS 3D DE JUEGO */
+    .stButton > button {
+        border-radius: 18px !important;
+        font-family: 'Fredoka', sans-serif !important;
+        font-size: 19px !important;
+        font-weight: 700 !important;
+        padding: 14px 22px !important;
+        border: 2px solid #2563eb !important;
+        border-bottom: 6px solid #1d4ed8 !important;
+        background: #3b82f6 !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.2) !important;
+        transition: all 0.1s ease !important;
+    }
+
+    .stButton > button:hover {
+        background: #2563eb !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3) !important;
+    }
+
+    .stButton > button:active {
+        transform: translateY(3px);
+        border-bottom: 2px solid #1d4ed8 !important;
+    }
+
+    .stButton > button p, .stButton > button span {
+        color: #ffffff !important;
+    }
+
+    /* TARJETAS DE LA TIENDA Y AVATAR */
+    .shop-card {
+        background: #ffffff !important;
+        border-radius: 20px;
+        padding: 18px;
+        text-align: center;
+        border: 3px solid #e2e8f0 !important;
+        border-bottom: 6px solid #cbd5e1 !important;
+        margin-bottom: 16px;
+    }
+
+    .fraction-visual {
+        font-size: 32px;
+        letter-spacing: 6px;
+        margin: 16px 0;
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 16px;
+        border: 2px dashed #cbd5e1;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 3. GENERADORES DINÁMICOS BILINGÜES MULTI-IDIOMA
+# -----------------------------------------------------------------------------
+
+def nuevo_reto_problemas_texto(idioma="Español"):
+    if idioma == "English":
+        personajes = ["Lucas", "Sophia", "Matthew", "Emma", "Leo", "Camila", "Ethan", "Isabella"]
+        objetos = [
+            ("supply crates", "energy cookies"),
+            ("gem chests", "mystic crystals"),
+            ("sticker packs", "legendary cards"),
+            ("bags of apples", "magic fruits")
+        ]
+        p = random.choice(personajes)
+        contenedor, ítem = random.choice(objetos)
+        tipo = random.choice([1, 2, 3])
+
+        if tipo == 1:
+            cant_c = random.randint(3, 8)
+            cant_p = random.randint(4, 9)
+            regalo = random.randint(2, min(10, cant_c * cant_p - 1))
+            total_i = cant_c * cant_p
+            correcta = total_i - regalo
+            historia = f"**{p}** has **{cant_c} {contenedor}**. Each one contains **{cant_p} {ítem}**. If {p} gives **{regalo} {ítem}** to a teammate, how many are left in total?"
+            p1_q = f"How many {ítem} did {p} have in total before giving any away?"
+            p2_q = f"If there were {total_i} and {regalo} were given away, how many are left?"
+        elif tipo == 2:
+            cant1, cant2 = random.randint(10, 30), random.randint(10, 30)
+            amigos = random.choice([2, 3, 4, 5])
+            tot = cant1 + cant2
+            tot_ajustado = tot + (amigos - (tot % amigos)) if tot % amigos != 0 else tot
+            cant2 = tot_ajustado - cant1
+            correcta = tot_ajustado // amigos
+            historia = f"**{p}** collected **{cant1} {ítem}** on Monday and **{cant2} {ítem}** on Tuesday. Then shared them equally among **{amigos} friends**. How many does each friend get?"
+            p1_q = f"How many {ítem} were collected in total across both days?"
+            p2_q = f"If {tot_ajustado} are split equally among {amigos} friends, how many does each receive?"
+            total_i = tot_ajustado
+        else:
+            paquetes, unidades, guardados = random.randint(2, 6), random.randint(5, 10), random.randint(5, 20)
+            total_i = paquetes * unidades
+            correcta = total_i + guardados
+            historia = f"**{p}** bought **{paquetes} {contenedor}** with **{unidades} {ítem}** each. If {p} already had **{guardados} {ítem}** in the backpack, how many are there in total?"
+            p1_q = f"How many {ítem} were bought in the new packages?"
+            p2_q = f"If {total_i} were bought and {guardados} were already saved, how many are there in total?"
+
+    else: # Español
+        personajes = ["Lucas", "Valentina", "Mateo", "Sofía", "Leo", "Camila", "Tomás", "Isabella"]
+        objetos = [
+            ("cajas de suministros", "galletas de energía", "las", "cuántas"),
+            ("cofres de gemas", "cristales marea", "los", "cuántos"),
+            ("sobres de cartas", "cartas legendarias", "las", "cuántas"),
+            ("bolsas de manzanas", "frutas mágicas", "las", "cuántas")
+        ]
+        p = random.choice(personajes)
+        contenedor, ítem, art, cant_preg = random.choice(objetos)
+        tipo = random.choice([1, 2, 3])
+
+        if tipo == 1:
+            cant_c = random.randint(3, 8)
+            cant_p = random.randint(4, 9)
+            regalo = random.randint(2, min(10, cant_c * cant_p - 1))
+            total_i = cant_c * cant_p
+            correcta = total_i - regalo
+            historia = f"**{p}** tiene **{cant_c} {contenedor}**. Cada una contiene **{cant_p} {ítem}**. Si decide regalar **{regalo} {ítem}** a su compañero de equipo, ¿cuántas le quedan en total?" if art == "las" else f"**{p}** tiene **{cant_c} {contenedor}**. Cada uno contiene **{cant_p} {ítem}**. Si decide regalar **{regalo} {ítem}** a su compañero de equipo, ¿cuántos le quedan en total?"
+            p1_q = f"¿{cant_preg.capitalize()} {ítem} tenía en total antes de regalar?"
+            p2_q = f"Si tenía {total_i} y regaló {regalo}, ¿{cant_preg} le quedan?"
+        elif tipo == 2:
+            cant1, cant2 = random.randint(10, 30), random.randint(10, 30)
+            amigos = random.choice([2, 3, 4, 5])
+            tot = cant1 + cant2
+            tot_ajustado = tot + (amigos - (tot % amigos)) if tot % amigos != 0 else tot
+            cant2 = tot_ajustado - cant1
+            correcta = tot_ajustado // amigos
+            historia = f"**{p}** recolectó **{cant1} {ítem}** el lunes y **{cant2} {ítem}** el martes. Luego {art} repartió en partes iguales entre sus **{amigos} amigos**. ¿{cant_preg.capitalize()} le tocan a cada uno?"
+            p1_q = f"¿{cant_preg.capitalize()} {ítem} recolectó en total entre los dos días?"
+            p2_q = f"Si reparte {tot_ajustado} entre {amigos} amigos, ¿{cant_preg} recibe cada uno?"
+            total_i = tot_ajustado
+        else:
+            paquetes, unidades, guardados = random.randint(2, 6), random.randint(5, 10), random.randint(5, 20)
+            total_i = paquetes * unidades
+            correcta = total_i + guardados
+            historia = f"**{p}** compró **{paquetes} {contenedor}** con **{unidades} {ítem}** cada uno. Si ya tenía **{guardados} {ítem}** guardados en su mochila, ¿{cant_preg} tiene ahora en total?"
+            p1_q = f"¿{cant_preg.capitalize()} {ítem} compró en los paquetes nuevos?"
+            p2_q = f"Si compró {total_i} y ya tenía {guardados}, ¿{cant_preg} tiene en total?"
+
+    p2_opciones = list(set([correcta, correcta + 2, max(1, correcta - 2), total_i]))
+    random.shuffle(p2_opciones)
+    st.session_state.prob_data = {
+        "historia": historia, "p1_q": p1_q, "p1_ans": total_i,
+        "p2_q": p2_q, "correcta": correcta, "p2_opciones": p2_opciones
+    }
+    st.session_state.mostrar_pista_prob = False
+    st.session_state.reto_prob_id = time.time()
+
+
+def nuevo_reto_geometria(idioma="Español"):
+    tipo = random.choice(["perimetro_rect", "area_grid", "perimetro_triang"])
+    
+    if tipo == "perimetro_rect":
+        ancho, largo = random.randint(3, 10), random.randint(4, 12)
+        correcta = 2 * (ancho + largo)
+        distractoras = [ancho + largo, ancho * largo, correcta + 2, max(4, correcta - 4)]
+        data = {"ancho": ancho, "largo": largo, "tipo": tipo}
+    elif tipo == "area_grid":
+        base, altura = random.randint(2, 6), random.randint(2, 5)
+        correcta = base * altura
+        distractoras = [base + altura, 2 * (base + altura), correcta + 3, max(2, correcta - 2)]
+        data = {"base": base, "altura": altura, "tipo": tipo}
+    else:
+        l1, l2, l3 = random.randint(4, 10), random.randint(4, 10), random.randint(4, 10)
+        correcta = l1 + l2 + l3
+        distractoras = [l1 + l2, correcta + 2, max(3, correcta - 3)]
+        data = {"l1": l1, "l2": l2, "l3": l3, "tipo": tipo}
+
+    opciones = list(set([correcta] + distractoras))
+    random.shuffle(opciones)
+    st.session_state.geom_data = {"tipo": tipo, "correcta": correcta, "opciones": opciones, "details": data}
+    st.session_state.mostrar_pista_geom = False
+    st.session_state.reto_geom_id = time.time()
+
+
+def nuevo_reto_operaciones(idioma="Español"):
     st.session_state.tipo_operacion = random.choice(["mult", "div"])
     if st.session_state.tipo_operacion == "mult":
         st.session_state.num1 = random.randint(2, 9)
@@ -62,7 +372,6 @@ def nuevo_reto_fracciones():
     num = random.randint(1, den - 1)
     st.session_state.denominador = den
     st.session_state.numerador = num
-    st.session_state.tipo_ejercicio_frac = random.choice([1, 2, 3])
     st.session_state.mostrar_pista_frac = False
     st.session_state.reto_frac_id = time.time()
 
@@ -74,305 +383,67 @@ def nuevo_reto_decimales():
     st.session_state.reto_dec_id = time.time()
 
     if tipo == 1:
-        e = random.randint(0, 5)
-        d = random.randint(1, 9)
-        c = random.randint(0, 9)
+        e, d, c = random.randint(0, 5), random.randint(1, 9), random.randint(0, 9)
         val_real = round(e + d / 10 + c / 100, 2)
-
         st.session_state.dec_data = {"e": e, "d": d, "c": c}
         correcta = str(val_real)
-        distractoras = [
-            str(round(val_real + 0.1, 2)),
-            str(round(val_real - 0.01 if val_real > 0.01 else 0.05, 2)),
-            f"{e}.{c}{d}",
-        ]
-
+        distractoras = [str(round(val_real + 0.1, 2)), str(round(val_real - 0.01 if val_real > 0.01 else 0.05, 2)), f"{e}.{c}{d}"]
         opciones = list(set([correcta] + distractoras))
         random.shuffle(opciones)
-
         st.session_state.dec_correcta = correcta
         st.session_state.dec_opciones = opciones
-
     elif tipo == 2:
         base = round(random.uniform(0.1, 9.9), 1)
         diferencia = random.choice([0.01, 0.05, 0.1, 0.15])
-        nA = round(base, 2)
-        nB = round(base + diferencia, 2)
-
-        if random.choice([True, False]):
-            nA, nB = nB, nA
-
+        nA, nB = round(base, 2), round(base + diferencia, 2)
+        if random.choice([True, False]): nA, nB = nB, nA
         st.session_state.dec_data = {"nA": nA, "nB": nB}
-        st.session_state.dec_correcta = "A" if nA > nB else ("B" if nB > nA else "EQUAL")
-        st.session_state.dec_opciones = ["A", "B", "EQUAL"]
-
+        st.session_state.dec_correcta = "A" if nA > nB else "B"
+        st.session_state.dec_opciones = ["A", "B"]
     else:
         num_f = random.choice([3, 7, 12, 45, 8, 25, 64, 89])
         den_f = random.choice([10, 100])
         val_real = round(num_f / den_f, 2)
-
         st.session_state.dec_data = {"num_f": num_f, "den_f": den_f}
         correcta = str(val_real)
-        distractoras = [str(round(val_real * 10, 2)), str(round(val_real / 10, 2)), f"0.{num_f}"]
-
+        distractoras = [str(round(val_real * 10, 2)), str(round(val_real / 10, 2))]
         opciones = list(set([correcta] + distractoras))
         random.shuffle(opciones)
-
         st.session_state.dec_correcta = correcta
         st.session_state.dec_opciones = opciones
 
 
 # -----------------------------------------------------------------------------
-# INICIALIZACIÓN DE SESSION STATE
+# 4. RENDERIZADOR AVATAR
 # -----------------------------------------------------------------------------
-if "tipo_operacion" not in st.session_state:
-    nuevo_reto_operaciones()
-
-if "numerador" not in st.session_state:
-    nuevo_reto_fracciones()
-
-if "tipo_ejercicio_dec" not in st.session_state:
-    nuevo_reto_decimales()
-
-if "gemas" not in st.session_state:
-    st.session_state.gemas = 0
-
-if "nivel" not in st.session_state:
-    st.session_state.nivel = 1
-
-if "equipado" not in st.session_state:
-    st.session_state.equipado = {"Casco": None, "Mascota": None, "Escudo": None}
-
-st.markdown("""
-    <style>
-    /* -----------------------------------------------------------------------------
-       1. FUENTE GLOBAL, OPTIMIZACIÓN WEBKIT (iPAD/iOS) Y FONDO
-    ----------------------------------------------------------------------------- */
-    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap');
-
-    html, body, [class*="css"], .stApp {
-        font-family: 'Fredoka', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        background-color: #f1f5f9 !important;
-        color: #0f172a !important; /* Color oscuro de alto contraste */
-        -webkit-font-smoothing: antialiased !important; /* Optimización clave para iPad */
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-    }
-
-    /* Forzar contraste en párrafos y textos generales de Streamlit */
-    p, span, label, div {
-        color: #0f172a !important;
-    }
-
-    /* -----------------------------------------------------------------------------
-       2. CONTENEDOR DE LOGO Y SIDEBAR
-    ----------------------------------------------------------------------------- */
-    [data-testid="stSidebar"] {
-        background-color: #ffffff !important;
-        border-right: 3px solid #cbd5e1 !important;
-    }
-
-    /* Texto de labels e inputs en sidebar */
-    [data-testid="stSidebar"] p, 
-    [data-testid="stSidebar"] span, 
-    [data-testid="stSidebar"] label {
-        color: #0f172a !important;
-        font-weight: 700 !important;
-    }
-
-    .logo-container {
-        background: #ffffff;
-        border: 3px solid #cbd5e1;
-        border-radius: 20px;
-        padding: 15px;
-        text-align: center;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.06);
-        margin-bottom: 20px;
-    }
-
-    .logo-img {
-        max-width: 140px;
-        height: auto;
-        filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.12));
-    }
-
-    /* -----------------------------------------------------------------------------
-       3. PESTAÑAS (TABS)
-    ----------------------------------------------------------------------------- */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: transparent;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        background-color: #ffffff !important;
-        border-radius: 14px 14px 0 0 !important;
-        border: 2px solid #cbd5e1 !important;
-        border-bottom: none !important;
-        padding: 12px 20px !important;
-        font-weight: 800 !important;
-        font-size: 17px !important;
-        color: #334155 !important; /* Texto oscuro visible en inactivos */
-    }
-
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #4f46e5, #3730a3) !important;
-        border-color: #3730a3 !important;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-    
-    /* Texto de la pestaña activa */
-    .stTabs [aria-selected="true"] p, 
-    .stTabs [aria-selected="true"] span {
-        color: #ffffff !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-
-    /* -----------------------------------------------------------------------------
-       4. TARJETAS DE MUNDOS Y RETOS (TEXTO BLANCO PROTEGIDO CON SOMBRA)
-    ----------------------------------------------------------------------------- */
-    .math-card, .fraction-card, .decimal-card {
-        padding: 24px;
-        border-radius: 24px;
-        text-align: center;
-        font-size: 26px;
-        font-weight: 700;
-        margin-bottom: 20px;
-    }
-
-    .math-card {
-        background: linear-gradient(135deg, #4f46e5, #312e81);
-        border: 3px solid #818cf8;
-        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-    }
-
-    .fraction-card {
-        background: linear-gradient(135deg, #d97706, #78350f);
-        border: 3px solid #f59e0b;
-        box-shadow: 0 10px 20px rgba(217, 119, 6, 0.3);
-    }
-
-    .decimal-card {
-        background: linear-gradient(135deg, #059669, #064e3b);
-        border: 3px solid #34d399;
-        box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
-    }
-
-    /* Forzar texto blanco de alto grosor dentro de las tarjetas */
-    .math-card, .math-card *, 
-    .fraction-card, .fraction-card *, 
-    .decimal-card, .decimal-card * {
-        color: #ffffff !important;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
-    }
-
-    /* Caja de Pista Pedagógica (CPA) */
-    .cpa-box {
-        background-color: #ffffff !important;
-        border: 3px dashed #d97706 !important;
-        border-radius: 20px;
-        padding: 22px;
-        margin: 20px 0;
-        box-shadow: 0 6px 15px rgba(0,0,0,0.06);
-        font-size: 17px;
-        line-height: 1.7;
-    }
-
-    .cpa-box * {
-        color: #0f172a !important;
-    }
-
-    /* -----------------------------------------------------------------------------
-       5. BOTONES ESTILO VIDEOJUEGO
-    ----------------------------------------------------------------------------- */
-    .stButton > button {
-        border-radius: 16px !important;
-        font-family: 'Fredoka', sans-serif !important;
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        padding: 14px 24px !important;
-        border: none !important;
-        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
-        color: #ffffff !important;
-        box-shadow: 0 6px 0 #1e3a8a, 0 10px 15px rgba(0,0,0,0.15) !important;
-    }
-
-    .stButton > button p, .stButton > button span {
-        color: #ffffff !important;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
-    }
-
-    /* -----------------------------------------------------------------------------
-       6. TIENDA Y AVATAR
-    ----------------------------------------------------------------------------- */
-    .avatar-card {
-        background: #ffffff !important;
-        border-radius: 20px;
-        padding: 18px;
-        text-align: center;
-        border: 3px solid #cbd5e1 !important;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.04);
-        margin-bottom: 15px;
-    }
-
-    .avatar-card div {
-        color: #0f172a !important;
-        font-weight: 700 !important;
-    }
-
-    .fraction-visual {
-        font-size: 34px;
-        letter-spacing: 6px;
-        margin: 15px 0;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------------------
-# 2. RENDERIZADOR DE AVATAR MODULAR
-# -----------------------------------------------------------------------------
-def renderizar_avatar_dinamico(
-    img_base: str,
-    img_casco: str = None,
-    img_escudo: str = None,
-    img_mascota: str = None,
-    size: int = 90,
-):
+def renderizar_avatar_dinamico(img_base, img_casco=None, img_escudo=None, img_mascota=None, size=80):
     capas = f'<img src="{img_base}" style="position:absolute; top:2%; left:2%; width:96%; height:96%; object-fit:contain; z-index:2;" />'
-
     if img_casco:
         capas += f'<img src="{img_casco}" style="position:absolute; top:-20%; left:15%; width:70%; height:50%; object-fit:contain; z-index:4;" />'
-
     if img_escudo:
         capas += f'<img src="{img_escudo}" style="position:absolute; bottom:5%; right:-10%; width:40%; height:40%; object-fit:contain; z-index:5;" />'
-
     if img_mascota:
         capas += f'<img src="{img_mascota}" style="position:absolute; bottom:0%; left:-15%; width:40%; height:40%; object-fit:contain; z-index:3;" />'
 
-    return (
-        f'<div style="position:relative; width:{size}px; height:{size}px; display:inline-block; '
-        f'vertical-align:middle; background:radial-gradient(circle, #f1f5f9 0%, #e2e8f0 100%); '
-        f'border-radius:50%; border:2px solid #cbd5e1; flex-shrink:0; overflow:visible;">{capas}</div>'
-    )
+    return f'<div style="position:relative; width:{size}px; height:{size}px; display:inline-block; vertical-align:middle; background:#f1f5f9; border-radius:50%; border:3px solid #cbd5e1; flex-shrink:0;">{capas}</div>'
 
 # -----------------------------------------------------------------------------
-# 3. SELECTOR DE IDIOMA Y DICCIONARIO BILINGÜE
+# 5. DICCIONARIOS Y NAVEGACIÓN BILINGÜE
 # -----------------------------------------------------------------------------
 with st.sidebar:
     if LOGO_COLEGIO_BASE64:
-        st.markdown(
-            f'''
-            <div class="logo-container">
-                <img src="{LOGO_COLEGIO_BASE64}" class="logo-img" />
-            </div>
-            ''',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.caption("🏫 *Agrega logo_colegio.png en la carpeta del proyecto*")
-
-    st.title("⚙️ Settings / Configuración")
-    lang = st.radio("🌐 Language / Idioma:", options=["Español", "English"], index=0)    
+        st.markdown(f'<div class="logo-container"><img src="{LOGO_COLEGIO_BASE64}" class="logo-img" /></div>', unsafe_allow_html=True)
+    
+    st.title("⚙️ Ajustes / Settings")
+    lang_prev = st.session_state.get("lang_actual", "Español")
+    lang = st.radio("🌐 Idioma / Language:", options=["Español", "English"], index=0)
+    
+    if lang != lang_prev:
+        st.session_state.lang_actual = lang
+        nuevo_reto_problemas_texto(lang)
+        nuevo_reto_geometria(lang)
+        nuevo_reto_operaciones(lang)
+        st.rerun()
 
 TEXTS = {
     "Español": {
@@ -382,30 +453,28 @@ TEXTS = {
         "select_hero": "Elige tu Héroe Base:",
         "btn_start": "¡Comenzar Aventura! 🚀",
         "level": "Nivel",
-        "tab_op": "🌲 Bosque de Operaciones",
-        "tab_frac": "🍕 Reino de Partes",
-        "tab_dec": "💎 Valle de Decimales",
-        "tab_shop": "🛒 Tienda del Guardián",
-        "op_mission": "Misión: Resuelve las operaciones para avanzar por el bosque.",
+        "tab_prob": "📜 Enigmas",
+        "tab_geom": "📐 Geometría",
+        "tab_op": "🌲 Algoritmos",
+        "tab_frac": "🍕 Fracciones",
+        "tab_dec": "💎 Decimales",
+        "tab_shop": "🛒 Tienda",
+        "cpa_title": "💡 Pista Conceptual (Explicación CPA)",
+        "correct_answer_label": "Resultado Correcto:",
+        "correct": "¡Excelente Trabajo! +10 Gemas 🎉",
+        "incorrect": "¡Casi! Lee la pista arriba y vuelve a intentarlo.",
+        "shop_caption": "🛒 **Tienda del Guardián:** Personaliza tu personaje con tus gemas.",
+        "buy": "Comprar", "equip": "✨ Equipar", "unequip": "❌ Desequipar", "no_gems": "¡Gemas insuficientes!",
+        "step1_title": "Paso 1: Análisis Inicial",
+        "step2_title": "Paso 2: Solución Final",
+        "p1_correct": "¡Paso 1 Correcto! 🎯 Ahora resuelve el paso final.",
+        "p1_wrong": "Revisa tus cálculos del Paso 1 antes de continuar.",
+        "p1_input_label": "Tu respuesta del Paso 1:",
         "op_question": "¿Cuánto es",
-        "frac_m1": "Misión: Identifica la fracción representada en la barra.",
-        "frac_q1": "¿Qué fracción del cristal está encendida?",
-        "frac_m2": "Misión: Análisis conceptual del cristal de poder.",
-        "frac_q2": "Si activamos {num} de un total de {den} partes:",
-        "frac_q2_sub": "¿Cuál es la fracción activada?",
-        "frac_m3": "Misión: Ayuda a los habitantes del reino.",
-        "frac_q3": "🍕 Una pizza se cortó en <b>{den} rebanadas iguales</b>.<br>Si Mateo se comió <b>{num} rebanadas</b>,<br>¿qué fracción de la pizza se comió?",
-        "dec_mission": "Misión: Descifra la energía decimal del cristal.",
-        "dec_m2_prompt": "¿Cuál cristal tiene MÁS energía?<br><br>💎 <b>Cristal A:</b> {nA}<br>💎 <b>Cristal B:</b> {nB}",
-        "dec_m3_prompt": "Convierte la siguiente fracción a su forma decimal:<br><br><span style='font-size:36px;'><b>{num_f} / {den_f}</b></span>",
-        "cpa_title": "💡 Pista Conceptual (CPA) - Explicación Detallada",
-        "correct": "¡Excelente! +10 Gemas 🎉",
-        "incorrect": "¡Casi! Revisa la explicación detallada arriba para entender la lógica.",
-        "shop_caption": "🛒 **Tienda del Guardián:** Usa tus gemas ganadas para personalizar tu personaje.",
-        "buy": "Comprar",
-        "equip": "✨ Equipar",
-        "unequip": "❌ Desequipar",
-        "no_gems": "¡Gemas insuficientes!",
+        "crystal_prefix": "Cristal",
+        "dec_q1": "¿Qué decimal representa?",
+        "dec_q2": "¿Cuál cristal es MAYOR?",
+        "dec_q3": "Convierte a decimal:"
     },
     "English": {
         "title": "🛡️ Math Quest: Number Guardians",
@@ -414,117 +483,76 @@ TEXTS = {
         "select_hero": "Choose your Base Hero:",
         "btn_start": "Start Adventure! 🚀",
         "level": "Level",
-        "tab_op": "🌲 Forest of Operations",
-        "tab_frac": "🍕 Kingdom of Fractions",
-        "tab_dec": "💎 Decimal Valley",
-        "tab_shop": "🛒 Guardian Shop",
-        "op_mission": "Mission: Solve operations to make your way through the forest.",
-        "op_question": "What is",
-        "frac_m1": "Mission: Identify the fraction shown on the crystal bar.",
-        "frac_q1": "What fraction of the crystal is active?",
-        "frac_m2": "Mission: Conceptual analysis of the power crystal.",
-        "frac_q2": "If we activate {num} out of a total of {den} parts:",
-        "frac_q2_sub": "Which fraction is activated?",
-        "frac_m3": "Mission: Help the kingdom inhabitants.",
-        "frac_q3": "🍕 A pizza was sliced into <b>{den} equal slices</b>.<br>If Mateo ate <b>{num} slices</b>,<br>what fraction of the pizza did he eat?",
-        "dec_mission": "Mission: Decipher the crystal's decimal energy.",
-        "dec_m2_prompt": "Which crystal has MORE power?<br><br>💎 <b>Crystal A:</b> {nA}<br>💎 <b>Crystal B:</b> {nB}",
-        "dec_m3_prompt": "Convert the following fraction to decimal form:<br><br><span style='font-size:36px;'><b>{num_f} / {den_f}</b></span>",
-        "cpa_title": "💡 Conceptual Hint (CPA) - Detailed Explanation",
-        "correct": "Great Job! +10 Gems 🎉",
-        "incorrect": "Almost! Read the detailed explanation above to master the logic.",
-        "shop_caption": "🛒 **Guardian Shop:** Use your earned gems to customize your avatar.",
-        "buy": "Buy",
-        "equip": "✨ Equip",
-        "unequip": "❌ Unequip",
-        "no_gems": "Not enough gems!",
+        "tab_prob": "📜 Word Quests",
+        "tab_geom": "📐 Geometry",
+        "tab_op": "🌲 Algorithms",
+        "tab_frac": "🍕 Fractions",
+        "tab_dec": "💎 Decimals",
+        "tab_shop": "🛒 Shop",
+        "cpa_title": "💡 Conceptual Hint (CPA Explanation)",
+        "correct_answer_label": "Correct Answer:",
+        "correct": "Awesome Job! +10 Gems 🎉",
+        "incorrect": "Almost! Check the hint above and try again.",
+        "shop_caption": "🛒 **Guardian Shop:** Use your gems to customize your hero.",
+        "buy": "Buy", "equip": "✨ Equip", "unequip": "❌ Unequip", "no_gems": "Not enough gems!",
+        "step1_title": "Step 1: Initial Analysis",
+        "step2_title": "Step 2: Final Solution",
+        "p1_correct": "Step 1 Correct! 🎯 Now solve the final step.",
+        "p1_wrong": "Double check Step 1 calculations before going on.",
+        "p1_input_label": "Your Step 1 answer:",
+        "op_question": "How much is",
+        "crystal_prefix": "Crystal",
+        "dec_q1": "Which decimal does this represent?",
+        "dec_q2": "Which crystal is GREATER?",
+        "dec_q3": "Convert to decimal:"
     },
 }
 
 t = TEXTS[lang]
 
-# -----------------------------------------------------------------------------
-# 4. CONSTANTES GLOBALES
-# -----------------------------------------------------------------------------
 CDN_BASE = "https://openmoji.org/data/color/svg"
-
 PERSONAJES_BASE = {
     "guardian_escolar": {"nombre": "Isabelino", "img": AVATAR_ESCOLAR_BASE64},
-    "mago": {"nombre": "Number Wizard / Mago", "img": f"{CDN_BASE}/1F9D9.svg"},
-    "guardiana": {"nombre": "Forest Guardian / Guardiana", "img": f"{CDN_BASE}/1F9DC.svg"},
+    "mago": {"nombre": "Mago / Wizard", "img": f"{CDN_BASE}/1F9D9.svg"},
+    "guardiana": {"nombre": "Guardiana / Ranger", "img": f"{CDN_BASE}/1F9DC.svg"},
     "bot": {"nombre": "Cyber-Bot 3000", "img": f"{CDN_BASE}/1F916.svg"},
-    "guerrero": {"nombre": "Valor Knight / Guerrero", "img": f"{CDN_BASE}/1F977.svg"},
+    "guerrero": {"nombre": "Guerrero / Knight", "img": f"{CDN_BASE}/1F977.svg"},
 }
 
 TIENDA_ITEMS = {
-    "sombrero_mago": {
-        "nombre": "Magic Hat" if lang == "English" else "Sombrero Mágico",
-        "img": f"{CDN_BASE}/1F3A9.svg",
-        "precio": 30,
-        "tipo": "Casco",
-    },
-    "corona_real": {
-        "nombre": "Wisdom Crown" if lang == "English" else "Corona de Sabiduría",
-        "img": f"{CDN_BASE}/1F451.svg",
-        "precio": 60,
-        "tipo": "Casco",
-    },
-    "dragonsito": {
-        "nombre": "Fire Dragon" if lang == "English" else "Dragón de Fuego",
-        "img": f"{CDN_BASE}/1F409.svg",
-        "precio": 80,
-        "tipo": "Mascota",
-    },
-    "gato_sabio": {
-        "nombre": "Astro Cat" if lang == "English" else "Gato Astro",
-        "img": f"{CDN_BASE}/1F431.svg",
-        "precio": 40,
-        "tipo": "Mascota",
-    },
-    "escudo_estelar": {
-        "nombre": "Cosmic Shield" if lang == "English" else "Escudo Cósmico",
-        "img": f"{CDN_BASE}/1F6E1.svg",
-        "precio": 50,
-        "tipo": "Escudo",
-    },
+    "sombrero_mago": {"nombre": "Magic Hat" if lang == "English" else "Sombrero Mágico", "img": f"{CDN_BASE}/1F3A9.svg", "precio": 30, "tipo": "Casco"},
+    "corona_real": {"nombre": "Wisdom Crown" if lang == "English" else "Corona de Sabiduría", "img": f"{CDN_BASE}/1F451.svg", "precio": 60, "tipo": "Casco"},
+    "dragonsito": {"nombre": "Fire Dragon" if lang == "English" else "Dragón de Fuego", "img": f"{CDN_BASE}/1F409.svg", "precio": 80, "tipo": "Mascota"},
+    "gato_sabio": {"nombre": "Astro Cat" if lang == "English" else "Gato Astro", "img": f"{CDN_BASE}/1F431.svg", "precio": 40, "tipo": "Mascota"},
+    "escudo_estelar": {"nombre": "Cosmic Shield" if lang == "English" else "Escudo Cósmico", "img": f"{CDN_BASE}/1F6E1.svg", "precio": 50, "tipo": "Escudo"},
 }
 
-# -----------------------------------------------------------------------------
-# 5. FUNCIONES DE CONEXIÓN
-# -----------------------------------------------------------------------------
+# Inicialización de Estados
+if "prob_data" not in st.session_state: nuevo_reto_problemas_texto(lang)
+if "geom_data" not in st.session_state: nuevo_reto_geometria(lang)
+if "tipo_operacion" not in st.session_state: nuevo_reto_operaciones(lang)
+if "numerador" not in st.session_state: nuevo_reto_fracciones()
+if "tipo_ejercicio_dec" not in st.session_state: nuevo_reto_decimales()
+if "gemas" not in st.session_state: st.session_state.gemas = 0
+if "nivel" not in st.session_state: st.session_state.nivel = 1
+if "equipado" not in st.session_state: st.session_state.equipado = {"Casco": None, "Mascota": None, "Escudo": None}
+
 def sincronizar_progreso(estudiante_id, nombre, gemas, nivel):
-    if not HAS_GSHEETS:
-        return
+    if not HAS_GSHEETS: return
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df_estudiantes = conn.read(worksheet="Estudiantes", ttl=0)
+        df = conn.read(worksheet="Estudiantes", ttl=0)
         ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        if estudiante_id in df_estudiantes["ID_Estudiante"].astype(str).values:
-            df_estudiantes.loc[
-                df_estudiantes["ID_Estudiante"].astype(str) == estudiante_id,
-                ["Gemas", "Nivel", "Ultimo_Acceso"],
-            ] = [gemas, nivel, ahora]
+        if estudiante_id in df["ID_Estudiante"].astype(str).values:
+            df.loc[df["ID_Estudiante"].astype(str) == estudiante_id, ["Gemas", "Nivel", "Ultimo_Acceso"]] = [gemas, nivel, ahora]
         else:
-            nuevo_registro = pd.DataFrame(
-                [
-                    {
-                        "ID_Estudiante": estudiante_id,
-                        "Nombre": nombre,
-                        "Gemas": gemas,
-                        "Nivel": nivel,
-                        "Ultimo_Acceso": ahora,
-                    }
-                ]
-            )
-            df_estudiantes = pd.concat([df_estudiantes, nuevo_registro], ignore_index=True)
-
-        conn.update(worksheet="Estudiantes", data=df_estudiantes)
-    except Exception:
-        pass
+            nuevo = pd.DataFrame([{"ID_Estudiante": estudiante_id, "Nombre": nombre, "Gemas": gemas, "Nivel": nivel, "Ultimo_Acceso": ahora}])
+            df = pd.concat([df, nuevo], ignore_index=True)
+        conn.update(worksheet="Estudiantes", data=df)
+    except Exception: pass
 
 # -----------------------------------------------------------------------------
-# 6. PANTALLA DE LOGIN
+# 6. LOGIN Y PANTALLA PRINCIPAL
 # -----------------------------------------------------------------------------
 if "usuario_activo" not in st.session_state:
     st.session_state.usuario_activo = False
@@ -532,275 +560,196 @@ if "usuario_activo" not in st.session_state:
 if not st.session_state.usuario_activo:
     st.title(t["title"])
     st.subheader(t["welcome"])
-
     with st.form("form_login"):
         nombre_input = st.text_input(t["input_label"])
-
-        personaje_sel = st.selectbox(
-            t["select_hero"],
-            options=list(PERSONAJES_BASE.keys()),
-            format_func=lambda x: f"{PERSONAJES_BASE[x]['nombre']}",
-        )
-
-        btn_ingresar = st.form_submit_button(t["btn_start"], use_container_width=True)
-
-        if btn_ingresar and nombre_input.strip():
-            est_id = nombre_input.strip().lower().replace(" ", "_")
-            st.session_state.estudiante_id = est_id
+        personaje_sel = st.selectbox(t["select_hero"], options=list(PERSONAJES_BASE.keys()), format_func=lambda x: PERSONAJES_BASE[x]["nombre"])
+        if st.form_submit_button(t["btn_start"], use_container_width=True) and nombre_input.strip():
+            st.session_state.estudiante_id = nombre_input.strip().lower().replace(" ", "_")
             st.session_state.estudiante_nombre = nombre_input.strip()
             st.session_state.personaje_base = personaje_sel
             st.session_state.gemas = 100
             st.session_state.nivel = 1
             st.session_state.inventario = []
-            st.session_state.equipado = {"Casco": None, "Mascota": None, "Escudo": None}
             st.session_state.usuario_activo = True
             st.rerun()
     st.stop()
 
-# -----------------------------------------------------------------------------
-# 7. HUD SUPERIOR CON AVATAR
-# -----------------------------------------------------------------------------
-hero_base_key = st.session_state.get("personaje_base", "mago")
-img_base = PERSONAJES_BASE[hero_base_key]["img"]
-
-casco_id = st.session_state.equipado.get("Casco")
-mascota_id = st.session_state.equipado.get("Mascota")
-escudo_id = st.session_state.equipado.get("Escudo")
-
-img_casco = TIENDA_ITEMS[casco_id]["img"] if casco_id else None
-img_mascota = TIENDA_ITEMS[mascota_id]["img"] if mascota_id else None
-img_escudo = TIENDA_ITEMS[escudo_id]["img"] if escudo_id else None
+# HUD Bar Rediseñada
+hero_base = st.session_state.get("personaje_base", "mago")
+img_b = PERSONAJES_BASE[hero_base]["img"]
+c_id, m_id, e_id = st.session_state.equipado.get("Casco"), st.session_state.equipado.get("Mascota"), st.session_state.equipado.get("Escudo")
 
 avatar_html = renderizar_avatar_dinamico(
-    img_base=img_base,
-    img_casco=img_casco,
-    img_escudo=img_escudo,
-    img_mascota=img_mascota,
-    size=75,
+    img_b,
+    TIENDA_ITEMS[c_id]["img"] if c_id else None,
+    TIENDA_ITEMS[e_id]["img"] if e_id else None,
+    TIENDA_ITEMS[m_id]["img"] if m_id else None
 )
 
-nombre_usuario = st.session_state.get("estudiante_nombre", "Jugador")
-
-col_hud1, col_hud2, col_hud3 = st.columns([2.5, 1, 1])
-
-with col_hud1:
-    st.markdown(
-        f'<div style="display:flex; align-items:center; gap:12px;">'
-        f"{avatar_html}"
-        f'<span style="font-size:20px; font-weight:bold; color:#2c3e50;">{nombre_usuario}</span>'
-        f"</div>",
-        unsafe_allow_html=True,
-    )
-
-with col_hud2:
-    st.markdown(f"### 🪙 `{st.session_state.gemas}`")
-
-with col_hud3:
-    st.markdown(f"### 🌟 {t['level']} `{st.session_state.nivel}`")
+c1, c2, c3 = st.columns([2.5, 1, 1])
+with c1:
+    st.markdown(f'<div style="display:flex; align-items:center; gap:12px;">{avatar_html}<span style="font-size:22px; font-weight:800; color:#0f172a;">{st.session_state.estudiante_nombre}</span></div>', unsafe_allow_html=True)
+with c2: st.markdown(f"### 💎 `{st.session_state.gemas}`")
+with c3: st.markdown(f"### ⭐ {t['level']} `{st.session_state.nivel}`")
 
 st.divider()
 
 # -----------------------------------------------------------------------------
-# 8. PESTAÑAS PRINCIPALES
+# 7. MUNDOS Y ACTIVIDADES DE APRENDIZAJE
 # -----------------------------------------------------------------------------
-tab_op, tab_frac, tab_dec, tab_tienda = st.tabs(
-    [t["tab_op"], t["tab_frac"], t["tab_dec"], t["tab_shop"]]
+tab_prob, tab_geom, tab_op, tab_frac, tab_dec, tab_tienda = st.tabs(
+    [t["tab_prob"], t["tab_geom"], t["tab_op"], t["tab_frac"], t["tab_dec"], t["tab_shop"]]
 )
 
-# =============================================================================
-# MUNDO 1: OPERACIONES
-# =============================================================================
+# === MUNDO 1: ENIGMAS DE TEXTO ===
+with tab_prob:
+    pdata = st.session_state.prob_data
+    st.markdown(f'''
+        <div class="question-card">
+            <div class="question-badge">{t["tab_prob"]}</div><br>
+            {pdata["historia"]}
+        </div>
+    ''', unsafe_allow_html=True)
+    
+    st.subheader(t["step1_title"])
+    st.write(f"👉 **{pdata['p1_q']}**")
+    p1_input = st.number_input(t["p1_input_label"], min_value=0, value=0, step=1, key=f"p1_{st.session_state.reto_prob_id}")
+    
+    if p1_input == pdata["p1_ans"]:
+        st.success(t["p1_correct"])
+        st.subheader(t["step2_title"])
+        st.write(f"🎯 **{pdata['p2_q']}**")
+        
+        cols = st.columns(2)
+        for idx, opt in enumerate(pdata["p2_opciones"]):
+            with cols[idx % 2]:
+                if st.button(f"✨ {opt}", key=f"btn_p_{st.session_state.reto_prob_id}_{idx}_{opt}", use_container_width=True):
+                    if opt == pdata["correcta"]:
+                        st.balloons()
+                        st.success(t["correct"])
+                        st.session_state.gemas += 10
+                        if st.session_state.gemas % 50 == 0: st.session_state.nivel += 1
+                        sincronizar_progreso(st.session_state.estudiante_id, st.session_state.estudiante_nombre, st.session_state.gemas, st.session_state.nivel)
+                        time.sleep(0.5)
+                        nuevo_reto_problemas_texto(lang)
+                        st.rerun()
+                    else:
+                        st.session_state.mostrar_pista_prob = True
+                        st.error(t["incorrect"])
+                        st.rerun()
+    elif p1_input > 0:
+        st.warning(t["p1_wrong"])
+
+    if st.session_state.mostrar_pista_prob:
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {t["correct_answer_label"]} <b>{pdata["correcta"]}</b></div>', unsafe_allow_html=True)
+
+# === MUNDO 2: GEOMETRÍA ===
+with tab_geom:
+    gdata = st.session_state.geom_data
+    d = gdata["details"]
+    
+    if lang == "English":
+        if gdata["tipo"] == "perimetro_rect":
+            prompt = f"Calculate the <span class='highlight-text'>PERIMETER</span>.<br><b>Width:</b> {d['ancho']} m | <b>Length:</b> {d['largo']} m"
+            pista = "Perimeter = Sum of all 4 sides."
+        elif gdata["tipo"] == "area_grid":
+            prompt = f"Calculate the <span class='highlight-text'>AREA</span>.<br><b>Base:</b> {d['base']} blocks | <b>Height:</b> {d['altura']} blocks"
+            pista = "Area = Multiply Base × Height."
+        else:
+            prompt = f"Calculate the <span class='highlight-text'>PERIMETER</span>.<br><b>Sides:</b> {d['l1']} cm, {d['l2']} cm, {d['l3']} cm"
+            pista = "Perimeter = Sum of the 3 sides."
+    else:
+        if gdata["tipo"] == "perimetro_rect":
+            prompt = f"Calcula el <span class='highlight-text'>PERÍMETRO</span>.<br><b>Ancho:</b> {d['ancho']} m | <b>Largo:</b> {d['largo']} m"
+            pista = "El Perímetro es la suma de los 4 lados."
+        elif gdata["tipo"] == "area_grid":
+            prompt = f"Calcula el <span class='highlight-text'>ÁREA</span>.<br><b>Base:</b> {d['base']} bloques | <b>Altura:</b> {d['altura']} bloques"
+            pista = "El Área es el total de cuadros: Multiplica Base × Altura."
+        else:
+            prompt = f"Calcula el <span class='highlight-text'>PERÍMETRO</span>.<br><b>Lados:</b> {d['l1']} cm, {d['l2']} cm, {d['l3']} cm"
+            pista = "El Perímetro es la suma de los 3 lados."
+
+    st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_geom"]}</div><br>{prompt}</div>', unsafe_allow_html=True)
+
+    if st.session_state.mostrar_pista_geom:
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {pista}<br>• {t["correct_answer_label"]} <b>{gdata["correcta"]}</b></div>', unsafe_allow_html=True)
+
+    g_cols = st.columns(2)
+    for idx, opt in enumerate(gdata["opciones"]):
+        with g_cols[idx % 2]:
+            if st.button(f"📐 {opt}", key=f"btn_g_{st.session_state.reto_geom_id}_{idx}_{opt}", use_container_width=True):
+                if opt == gdata["correcta"]:
+                    st.balloons()
+                    st.success(t["correct"])
+                    st.session_state.gemas += 10
+                    if st.session_state.gemas % 50 == 0: st.session_state.nivel += 1
+                    sincronizar_progreso(st.session_state.estudiante_id, st.session_state.estudiante_nombre, st.session_state.gemas, st.session_state.nivel)
+                    time.sleep(0.5)
+                    nuevo_reto_geometria(lang)
+                    st.rerun()
+                else:
+                    st.session_state.mostrar_pista_geom = True
+                    st.error(t["incorrect"])
+                    st.rerun()
+
+# === MUNDO 3: ALGORITMOS Y OPERACIONES ===
 with tab_op:
     tipo_op = st.session_state.tipo_operacion
     n1, n2 = st.session_state.num1, st.session_state.num2
     correcta_o = st.session_state.correcta_op
 
-    st.caption(t["op_mission"])
-    st.markdown(
-        f'<div class="math-card">{t["op_question"]} {n1} {"×" if tipo_op == "mult" else "÷"} {n2}?</div>',
-        unsafe_allow_html=True,
-    )
+    q_sym = "×" if tipo_op == "mult" else "÷"
+    st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_op"]}</div><br>{t["op_question"]} <span class="highlight-text">{n1} {q_sym} {n2}</span>?</div>', unsafe_allow_html=True)
 
     if st.session_state.mostrar_pista_op:
-        if tipo_op == "mult":
-            suma_str = " + ".join([str(n2)] * n1)
-            if lang == "English":
-                explicacion_op = f"""
-                    <b>🔍 Conceptual Breakdown:</b><br>
-                    • <b>What is Multiplication?</b> Multiplication is a fast way of doing repeated additions of the same size.<br>
-                    • <b>The Meaning of {n1} × {n2}:</b> Imagine organizing items into a grid. You have <b>{n1} rows (groups)</b> and each row contains <b>{n2} elements</b>.<br>
-                    • <b>Step-by-Step Addition:</b> Instead of counting one by one, you add the same group: <code>{suma_str}</code>.<br>
-                    • <b>Conclusion:</b> Accumulating those {n1} equal groups gives a total of <b style="color:#d35400;">{correcta_o}</b>.
-                """
-            else:
-                explicacion_op = f"""
-                    <b>🔍 Desglose Conceptual:</b><br>
-                    • <b>¿Qué es Multiplicar?</b> La multiplicación es un atajo para sumar varias veces una misma cantidad sin cansarse.<br>
-                    • <b>Significado de {n1} × {n2}:</b> Imagina organizar manzanas en filas. Tienes <b>{n1} filas (grupos)</b> y en cada fila colocas <b>{n2} elementos</b>.<br>
-                    • <b>Suma Repetida:</b> En lugar de contar de 1 en 1, sumas cada grupo completo: <code>{suma_str}</code>.<br>
-                    • <b>Conclusión:</b> Al acumular esos {n1} grupos iguales obtienes un total de <b style="color:#d35400;">{correcta_o}</b>.
-                """
-
-            st.markdown(
-                f"""
-                <div class="cpa-box">
-                    <div style="color: #d35400; font-weight: bold; font-size: 18px;">{t["cpa_title"]}</div>
-                    <p style="margin-top:8px;">{explicacion_op}</p>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-            for i in range(n1):
-                st.write(f"**Group / Grupo {i+1}:** " + "🍏 " * n2)
-        else:
-            if lang == "English":
-                explicacion_op = f"""
-                    <b>🔍 Conceptual Breakdown:</b><br>
-                    • <b>What is Division?</b> Division is the opposite of multiplication: it means fair sharing or splitting a big total into equal parts.<br>
-                    • <b>The Meaning of {n1} ÷ {n2}:</b> You start with a total of <b>{n1} items</b> and want to distribute them evenly into <b>{n2} equal boxes</b>.<br>
-                    • <b>Fair Distribution:</b> You place 1 item in each box repeatedly until the total of {n1} is completely exhausted.<br>
-                    • <b>Conclusion:</b> Each box ends up with exactly <b style="color:#d35400;">{correcta_o} elements</b> because {correcta_o} × {n2} = {n1}.
-                """
-            else:
-                explicacion_op = f"""
-                    <b>🔍 Desglose Conceptual:</b><br>
-                    • <b>¿Qué es Dividir?</b> La división es la operación inversa a la multiplicación: consiste en hacer un reparto equitativo o "justo".<br>
-                    • <b>Significado de {n1} ÷ {n2}:</b> Empiezas con un gran total de <b>{n1} elementos</b> y debes repartirlos en partes iguales entre <b>{n2} cajas</b>.<br>
-                    • <b>Reparto Paso a Paso:</b> Vas entregando elementos uno a uno a cada caja hasta que el total de {n1} se agota por completo.<br>
-                    • <b>Conclusión:</b> A cada caja le corresponden exactamente <b style="color:#d35400;">{correcta_o} elementos</b> porque {correcta_o} × {n2} = {n1}.
-                """
-
-            st.markdown(
-                f"""
-                <div class="cpa-box">
-                    <div style="color: #d35400; font-weight: bold; font-size: 18px;">{t["cpa_title"]}</div>
-                    <p style="margin-top:8px;">{explicacion_op}</p>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-            for i in range(n2):
-                st.write(f"**Box / Caja {i+1}:** " + "🍎 " * correcta_o)
-        st.divider()
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {t["correct_answer_label"]} <b>{correcta_o}</b></div>', unsafe_allow_html=True)
 
     opciones_o = list({correcta_o, correcta_o + 2, max(1, correcta_o - 1), correcta_o + 3})
-    random.seed(int(st.session_state.reto_op_id * 1000))
     random.shuffle(opciones_o)
 
     g1, g2 = st.columns(2)
     for idx, opt in enumerate(opciones_o):
-        col_dest = g1 if idx % 2 == 0 else g2
-        with col_dest:
-            if st.button(f"👉 {opt}", key=f"btn_o_{st.session_state.reto_op_id}_{idx}_{opt}", use_container_width=True):
+        with (g1 if idx % 2 == 0 else g2):
+            if st.button(f"⚡ {opt}", key=f"btn_o_{st.session_state.reto_op_id}_{idx}_{opt}", use_container_width=True):
                 if opt == correcta_o:
                     st.balloons()
                     st.success(t["correct"])
                     st.session_state.gemas += 10
-                    if st.session_state.gemas % 50 == 0:
-                        st.session_state.nivel += 1
-
-                    sincronizar_progreso(
-                        st.session_state.estudiante_id,
-                        st.session_state.estudiante_nombre,
-                        st.session_state.gemas,
-                        st.session_state.nivel,
-                    )
+                    if st.session_state.gemas % 50 == 0: st.session_state.nivel += 1
+                    sincronizar_progreso(st.session_state.estudiante_id, st.session_state.estudiante_nombre, st.session_state.gemas, st.session_state.nivel)
                     time.sleep(0.5)
-                    nuevo_reto_operaciones()
+                    nuevo_reto_operaciones(lang)
                     st.rerun()
                 else:
                     st.session_state.mostrar_pista_op = True
                     st.error(t["incorrect"])
                     st.rerun()
 
-# =============================================================================
-# MUNDO 2: FRACCIONES
-# =============================================================================
+# === MUNDO 4: FRACCIONES ===
 with tab_frac:
     num, den = st.session_state.numerador, st.session_state.denominador
-    tipo = st.session_state.tipo_ejercicio_frac
-    reto_id = st.session_state.get("reto_frac_id", time.time())
-
-    if tipo == 1:
-        st.caption(t["frac_m1"])
-        bloques = "🟩 " * num + "⬜ " * (den - num)
-        st.markdown(
-            f'<div class="fraction-card">{t["frac_q1"]}<div class="fraction-visual">{bloques}</div></div>',
-            unsafe_allow_html=True,
-        )
-        correcta_f = f"{num}/{den}"
-        distractoras = [
-            f"{den - num}/{den}",
-            f"{num}/{den + 1 if den < 8 else den - 1}",
-            f"{num + 1 if num < den - 1 else 1}/{den}",
-        ]
-    elif tipo == 2:
-        st.caption(t["frac_m2"])
-        bloques = "🟦 " * num + "⬜ " * (den - num)
-        q2_txt = t["frac_q2"].format(num=num, den=den)
-        st.markdown(
-            f'<div class="fraction-card">{q2_txt}<div class="fraction-visual">{bloques}</div>{t["frac_q2_sub"]}</div>',
-            unsafe_allow_html=True,
-        )
-        correcta_f = f"{num}/{den}"
-        distractoras = [
-            f"{num}/{den - 1 if den > 2 else den + 2}",
-            f"{den}/{num}",
-            f"{num + 1}/{den}",
-        ]
-    else:
-        st.caption(t["frac_m3"])
-        q3_txt = t["frac_q3"].format(num=num, den=den)
-        st.markdown(f'<div class="fraction-card">{q3_txt}</div>', unsafe_allow_html=True)
-        correcta_f = f"{num}/{den}"
-        distractoras = [f"{den - num}/{den}", f"{num}/{den + 2}", f"{den}/{num}"]
+    bloques = "🟩 " * num + "⬜ " * (den - num)
+    q_txt = "Which fraction represents this bar?" if lang == "English" else "¿Qué fracción representa esta barra?"
+    st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_frac"]}</div><br>{q_txt}<div class="fraction-visual">{bloques}</div></div>', unsafe_allow_html=True)
+    correcta_f = f"{num}/{den}"
+    distractoras = [f"{den - num}/{den}", f"{num}/{den + 1 if den < 8 else den - 1}"]
 
     if st.session_state.mostrar_pista_frac:
-        if lang == "English":
-            exp_frac = f"""
-                <b>🔍 Anatomy of the Fraction <span style="color:#d35400;">{num}/{den}</span>:</b><br>
-                • <b>Denominator (Bottom Number = {den}):</b> This represents the <i>Unit Division</i>. It tells us that 1 whole object was divided into exactly <b>{den} identical equal-sized pieces</b>.<br>
-                • <b>Numerator (Top Number = {num}):</b> This represents the <i>Selection or Count</i>. It tells us how many of those equal pieces we are active, taking, or highlighting (<b>{num} pieces</b>).<br>
-                • <b>Why not swap them?</b> If you wrote <code>{den}/{num}</code>, you would be saying you took {den} parts from a total of {num}, which changes the entire physical meaning!<br>
-                <i>💡 Golden Rule: Bottom = Total cuts made | Top = Cuts taken!</i>
-            """
-        else:
-            exp_frac = f"""
-                <b>🔍 Anatomía de la Fracción <span style="color:#d35400;">{num}/{den}</span>:</b><br>
-                • <b>Denominador (Número de abajo = {den}):</b> Representa la <i>Unidad de Medida</i>. Nos dice que el objeto entero fue dividido en exactamente <b>{den} partes completamente iguales</b>.<br>
-                • <b>Numerador (Número de arriba = {num}):</b> Representa el <i>Conteo o Elección</i>. Indica cuántas de esas partes exactas estamos tomando, pintando o activando (<b>{num} partes</b>).<br>
-                • <b>¿Por qué no al revés?</b> Si escribieras <code>{den}/{num}</code>, estarías diciendo que tienes más pedazos tomados que los cortes totales que existían en la unidad.<br>
-                <i>💡 Regla de Oro: ¡Abajo van los cortes totales; arriba los pedazos seleccionados!</i>
-            """
-        st.markdown(
-            f'<div class="cpa-box"><div style="color: #e67e22; font-weight: bold; font-size:18px;">{t["cpa_title"]}</div><p style="margin-top:8px;">{exp_frac}</p></div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• Numerator = {num} / Denominator = {den}' if lang == "English" else f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• Numerador = {num} / Denominador = {den}</div>', unsafe_allow_html=True)
 
     opciones_f = list(set([correcta_f] + distractoras))
     random.shuffle(opciones_f)
 
     gf1, gf2 = st.columns(2)
     for idx, opt in enumerate(opciones_f):
-        col_dest = gf1 if idx % 2 == 0 else gf2
-        with col_dest:
-            btn_key = f"btn_f_{reto_id}_{idx}_{opt}"
-
-            if st.button(f"🍕 {opt}", key=btn_key, use_container_width=True):
+        with (gf1 if idx % 2 == 0 else gf2):
+            if st.button(f"🍕 {opt}", key=f"btn_f_{st.session_state.reto_frac_id}_{idx}_{opt}", use_container_width=True):
                 if opt == correcta_f:
                     st.balloons()
                     st.success(t["correct"])
                     st.session_state.gemas += 10
-                    if st.session_state.gemas % 50 == 0:
-                        st.session_state.nivel += 1
-
-                    sincronizar_progreso(
-                        st.session_state.estudiante_id,
-                        st.session_state.estudiante_nombre,
-                        st.session_state.gemas,
-                        st.session_state.nivel,
-                    )
-
+                    if st.session_state.gemas % 50 == 0: st.session_state.nivel += 1
+                    sincronizar_progreso(st.session_state.estudiante_id, st.session_state.estudiante_nombre, st.session_state.gemas, st.session_state.nivel)
                     nuevo_reto_fracciones()
                     time.sleep(0.5)
                     st.rerun()
@@ -809,148 +758,37 @@ with tab_frac:
                     st.error(t["incorrect"])
                     st.rerun()
 
-# =============================================================================
-# MUNDO 3: DECIMALES
-# =============================================================================
+# === MUNDO 5: DECIMALES ===
 with tab_dec:
-    st.caption(t["dec_mission"])
-
     tipo_d = st.session_state.tipo_ejercicio_dec
     d_data = st.session_state.dec_data
 
     if tipo_d == 1:
-        e, d_val, c = d_data["e"], d_data["d"], d_data["c"]
-        u_lbl = "Ones / Unidades" if lang == "English" else "Unidades"
-        d_lbl = "Tenths / Décimas" if lang == "English" else "Décimas"
-        c_lbl = "Hundredths / Centésimas" if lang == "English" else "Centésimas"
-        q_lbl = (
-            "What decimal number do these blocks represent?"
-            if lang == "English"
-            else "¿Qué número decimal representan estos bloques?"
-        )
-
-        prompt_html = f"{q_lbl}<br><div class='fraction-visual'><b>{e}</b> {u_lbl} 🟩 | <b>{d_val}</b> {d_lbl} 🟨 | <b>{c}</b> {c_lbl} 🟦</div>"
+        unit_label = "U" if lang == "English" else "U"
+        tenths_label = "t" if lang == "English" else "d"
+        hundredths_label = "h" if lang == "English" else "c"
+        prompt = f"{t['dec_q1']}<br><div class='fraction-visual'><b>{d_data['e']}</b> {unit_label} | <b>{d_data['d']}</b> {tenths_label} | <b>{d_data['c']}</b> {hundredths_label}</div>"
     elif tipo_d == 2:
-        prompt_html = t["dec_m2_prompt"].format(nA=d_data["nA"], nB=d_data["nB"])
+        prompt = f"{t['dec_q2']}<br><br>💎 <b>A:</b> {d_data['nA']} | 💎 <b>B:</b> {d_data['nB']}"
     else:
-        prompt_html = t["dec_m3_prompt"].format(num_f=d_data["num_f"], den_f=d_data["den_f"])
+        prompt = f"{t['dec_q3']}<br><span style='font-size:32px;' class='highlight-text'><b>{d_data['num_f']} / {d_data['den_f']}</b></span>"
 
-    st.markdown(f'<div class="decimal-card">{prompt_html}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_dec"]}</div><br>{prompt}</div>', unsafe_allow_html=True)
 
     if st.session_state.mostrar_pista_dec:
-        if tipo_d == 1:
-            e, d_val, c = d_data["e"], d_data["d"], d_data["c"]
-            val_calc = round(e + d_val / 10 + c / 100, 2)
-            if lang == "English":
-                exp_dec = f"""
-                    <b>🔍 Understanding Place Value & Decimal Scale:</b><br>
-                    • <b>The Decimal Dot (.):</b> Acts as a boundary. Everything to the left is a <i>Whole Unit</i>; everything to the right is a <i>Fractional Part</i>.<br>
-                    • <b>Ones (Left of dot = {e}):</b> Represents whole blocks. Value: <b>{e}</b>.<br>
-                    • <b>Tenths (1st digit right of dot = {d_val}):</b> Each tenth is 1 whole block sliced into 10 strips (1/10 = 0.1). Value: {d_val} × 0.1 = <b>{d_val/10}</b>.<br>
-                    • <b>Hundredths (2nd digit right of dot = {c}):</b> Each hundredth is 1 whole block sliced into 100 tiny cubes (1/100 = 0.01). Value: {c} × 0.01 = <b>{c/100}</b>.<br>
-                    • <b>Combined Total Value:</b> {e} + {d_val/10} + {c/100} = <b style="color:#27ae60; font-size:18px;">{val_calc}</b>.
-                """
-            else:
-                exp_dec = f"""
-                    <b>🔍 Comprendiendo el Valor Posicional y la Escala Decimal:</b><br>
-                    • <b>El Punto/Coma Decimal (.):</b> Funciona como una frontera. A la izquierda están los <i>Enteros</i>; a la derecha están los <i>Pedazos de Entero</i>.<br>
-                    • <b>Unidades (A la izquierda = {e}):</b> Bloques completos sin cortar. Valor: <b>{e}</b>.<br>
-                    • <b>Décimas (1ª posición a la derecha = {d_val}):</b> Cortamos 1 entero en 10 tiras (1/10 = 0.1). Valor: {d_val} × 0.1 = <b>{d_val/10}</b>.<br>
-                    • <b>Centésimas (2ª posición a la derecha = {c}):</b> Cortamos 1 entero en 10 cubitos (1/100 = 0.01). Valor: {c} × 0.01 = <b>{c/100}</b>.<br>
-                    • <b>Valor Total Sumado:</b> {e} + {d_val/10} + {c/100} = <b style="color:#27ae60; font-size:18px;">{val_calc}</b>.
-                """
-        elif tipo_d == 2:
-            nA, nB = d_data["nA"], d_data["nB"]
-            if lang == "English":
-                exp_dec = f"""
-                    <b>🔍 Step-by-Step Decimal Comparison ({nA} vs {nB}):</b><br>
-                    • <b>Rule 1 (Whole Numbers):</b> Check the numbers before the decimal point first. Whichever has a larger whole number is bigger.<br>
-                    • <b>Rule 2 (Tenths Position):</b> If wholes are equal, inspect the 1st position after the dot (Tenths). Larger tenths = Larger number.<br>
-                    • <b>Rule 3 (Hundredths Position):</b> If tenths are also equal, move to the 2nd position (Hundredths).<br>
-                    • <b>Analysis:</b> Comparing position by position reveals that <b style="color:#27ae60;">{max(nA, nB)}</b> holds higher positional weight than {min(nA, nB)}.
-                """
-            else:
-                exp_dec = f"""
-                    <b>🔍 Comparación Paso a Paso de Decimales ({nA} vs {nB}):</b><br>
-                    • <b>Regla 1 (Parte Entera):</b> Compara primero los números antes del punto. El que tenga mayor entero es el más grande.<br>
-                    • <b>Regla 2 (Posición de Décimas):</b> Si los enteros son iguales, mira la 1ª cifra tras el punto (Décimas). Mayor décima = Número mayor.<br>
-                    • <b>Regla 3 (Posición de Centésimas):</b> Si las décimas coinciden, desempata con la 2ª cifra tras el punto (Centésimas).<br>
-                    • <b>Análisis:</b> Al evaluar posición por posición, notamos que <b style="color:#27ae60;">{max(nA, nB)}</b> tiene un peso posicional superior a {min(nA, nB)}.
-                """
-        else:
-            num_f, den_f = d_data["num_f"], d_data["den_f"]
-            res = round(num_f / den_f, 2)
-            if lang == "English":
-                exp_dec = f"""
-                    <b>🔍 How Base-10 Fractions Become Decimals ({num_f}/{den_f}):</b><br>
-                    • <b>Base-10 Connection:</b> Decimals are just special shorthand for fractions with denominators of 10, 100, 1000, etc.<br>
-                    • <b>Dividing by 10:</b> Shifts the decimal point <b>1 place to the left</b> (creates Tenths).<br>
-                    • <b>Dividing by 100:</b> Shifts the decimal point <b>2 places to the left</b> (creates Hundredths).<br>
-                    • <b>Calculation:</b> Taking {num_f} and dividing by {den_f} moves the scale to give exactly <b style="color:#27ae60;">{res}</b>.
-                """
-            else:
-                exp_dec = f"""
-                    <b>🔍 Cómo las Fracciones Base-10 se Convierten en Decimales ({num_f}/{den_f}):</b><br>
-                    • <b>Conexión Directa:</b> Un número decimal es solo una forma corta de escribir una fracción que está dividida entre 10, 100, 1000, etc.<br>
-                    • <b>Dividir entre 10:</b> Desplaza el punto decimal <b>1 espacio hacia la izquierda</b> (crea Décimas).<br>
-                    • <b>Dividir entre 100:</b> Desplaza el punto decimal <b>2 espacios hacia la izquierda</b> (crea Centésimas).<br>
-                    • <b>Cálculo:</b> Tomar el número {num_f} y dividirlo entre {den_f} mueve la escala posicional resultando en <b style="color:#27ae60;">{res}</b>.
-                """
-
-        st.markdown(
-            f"""
-            <div class="cpa-box">
-                <div style="color: #27ae60; font-weight: bold; font-size:18px;">{t["cpa_title"]}</div>
-                <p style="margin-top:8px;">{exp_dec}</p>
-            </div>
-        """,
-            unsafe_allow_html=True,
-        )
-
-    correcta_d = st.session_state.dec_correcta
-    opciones_d = st.session_state.dec_opciones
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {t["correct_answer_label"]} <b>{st.session_state.dec_correcta}</b></div>', unsafe_allow_html=True)
 
     gd1, gd2 = st.columns(2)
-    for idx, opt in enumerate(opciones_d):
-        col_dest = gd1 if idx % 2 == 0 else gd2
-
-        if tipo_d == 2:
-            if opt == "A":
-                display_opt = (
-                    f"Crystal A ({d_data['nA']}) > Crystal B"
-                    if lang == "English"
-                    else f"Cristal A ({d_data['nA']}) es MAYOR"
-                )
-            elif opt == "B":
-                display_opt = (
-                    f"Crystal B ({d_data['nB']}) > Crystal A"
-                    if lang == "English"
-                    else f"Cristal B ({d_data['nB']}) es MAYOR"
-                )
-            else:
-                display_opt = "Both are EQUAL" if lang == "English" else "Ambos son IGUALES"
-        else:
-            display_opt = opt
-
-        with col_dest:
-            if st.button(
-                f"💎 {display_opt}",
-                key=f"btn_d_{st.session_state.reto_dec_id}_{idx}_{opt}",
-                use_container_width=True,
-            ):
-                if opt == correcta_d:
+    for idx, opt in enumerate(st.session_state.dec_opciones):
+        display_opt = f"{t['crystal_prefix']} {opt}" if tipo_d == 2 else opt
+        with (gd1 if idx % 2 == 0 else gd2):
+            if st.button(f"💎 {display_opt}", key=f"btn_d_{st.session_state.reto_dec_id}_{idx}_{opt}", use_container_width=True):
+                if opt == st.session_state.dec_correcta:
                     st.balloons()
                     st.success(t["correct"])
                     st.session_state.gemas += 10
-                    if st.session_state.gemas % 50 == 0:
-                        st.session_state.nivel += 1
-
-                    sincronizar_progreso(
-                        st.session_state.estudiante_id,
-                        st.session_state.estudiante_nombre,
-                        st.session_state.gemas,
-                        st.session_state.nivel,
-                    )
+                    if st.session_state.gemas % 50 == 0: st.session_state.nivel += 1
+                    sincronizar_progreso(st.session_state.estudiante_id, st.session_state.estudiante_nombre, st.session_state.gemas, st.session_state.nivel)
                     time.sleep(0.5)
                     nuevo_reto_decimales()
                     st.rerun()
@@ -959,9 +797,7 @@ with tab_dec:
                     st.error(t["incorrect"])
                     st.rerun()
 
-# =============================================================================
-# MUNDO 4: TIENDA DE ÍTEMS
-# =============================================================================
+# === MUNDO 6: TIENDA ===
 with tab_tienda:
     st.caption(t["shop_caption"])
     t_col1, t_col2 = st.columns(2)
@@ -974,31 +810,22 @@ with tab_tienda:
         with col_destino:
             st.markdown(
                 f"""
-                <div class="avatar-card">
-                    <img src="{info['img']}" style="width: 50px; height: 50px; object-fit: contain;" />
-                    <div style="font-weight: bold; margin-top: 5px;">{info['nombre']}</div>
-                    <div style="color: #888; font-size: 14px;">{info['tipo']}</div>
+                <div class="shop-card">
+                    <img src="{info['img']}" style="width: 52px; height: 52px; object-fit: contain;" />
+                    <div style="font-weight: 800; font-size: 16px; margin-top: 6px;">{info['nombre']}</div>
+                    <div style="color: #64748b; font-size: 13px;">{info['tipo']}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
             if not con_comprado:
-                if st.button(
-                    f"{t['buy']} 🪙 {info['precio']}",
-                    key=f"buy_{item_id}",
-                    use_container_width=True,
-                ):
+                if st.button(f"{t['buy']} 🪙 {info['precio']}", key=f"buy_{item_id}", use_container_width=True):
                     if st.session_state.gemas >= info["precio"]:
                         st.session_state.gemas -= info["precio"]
                         st.session_state.inventario.append(item_id)
-                        sincronizar_progreso(
-                            st.session_state.estudiante_id,
-                            st.session_state.estudiante_nombre,
-                            st.session_state.gemas,
-                            st.session_state.nivel,
-                        )
-                        st.toast(f"Bought / Compraste {info['nombre']}!", icon="🎉")
+                        sincronizar_progreso(st.session_state.estudiante_id, st.session_state.estudiante_nombre, st.session_state.gemas, st.session_state.nivel)
+                        st.toast(f"¡Comprado: {info['nombre']}!", icon="🎉")
                         st.rerun()
                     else:
                         st.error(t["no_gems"])
@@ -1010,5 +837,5 @@ with tab_tienda:
                 else:
                     if st.button(t["equip"], key=f"equip_{item_id}", use_container_width=True):
                         st.session_state.equipado[info["tipo"]] = item_id
-                        st.toast(f"Equipped / Equipaste {info['nombre']}")
+                        st.toast(f"Equipado: {info['nombre']}")
                         st.rerun()
