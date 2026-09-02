@@ -146,14 +146,22 @@ if "equipado" not in st.session_state:
 st.markdown("""
     <style>
     /* -----------------------------------------------------------------------------
-       1. FUENTE GLOBAL Y FONDO PRINCIPAL
+       1. FUENTE GLOBAL, OPTIMIZACIÓN WEBKIT (iPAD/iOS) Y FONDO
     ----------------------------------------------------------------------------- */
-    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap');
 
     html, body, [class*="css"], .stApp {
-        font-family: 'Fredoka', 'Nunito', sans-serif !important;
-        background: #f0f4f9;
-        color: #2c3e50;
+        font-family: 'Fredoka', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important; /* Color oscuro de alto contraste */
+        -webkit-font-smoothing: antialiased !important; /* Optimización clave para iPad */
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+    }
+
+    /* Forzar contraste en párrafos y textos generales de Streamlit */
+    p, span, label, div {
+        color: #0f172a !important;
     }
 
     /* -----------------------------------------------------------------------------
@@ -161,23 +169,25 @@ st.markdown("""
     ----------------------------------------------------------------------------- */
     [data-testid="stSidebar"] {
         background-color: #ffffff !important;
-        border-right: 3px solid #e2e8f0;
+        border-right: 3px solid #cbd5e1 !important;
     }
 
-    /* Marco destacado para el Logo del Colegio */
+    /* Texto de labels e inputs en sidebar */
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] label {
+        color: #0f172a !important;
+        font-weight: 700 !important;
+    }
+
     .logo-container {
-        background: linear-gradient(135deg, #ffffff, #f8fafc);
-        border: 3px solid #e2e8f0;
+        background: #ffffff;
+        border: 3px solid #cbd5e1;
         border-radius: 20px;
         padding: 15px;
         text-align: center;
         box-shadow: 0 8px 16px rgba(0,0,0,0.06);
         margin-bottom: 20px;
-        transition: transform 0.3s ease;
-    }
-    
-    .logo-container:hover {
-        transform: scale(1.03);
     }
 
     .logo-img {
@@ -187,139 +197,133 @@ st.markdown("""
     }
 
     /* -----------------------------------------------------------------------------
-       3. PESTAÑAS DIVERTIAS (TABS)
+       3. PESTAÑAS (TABS)
     ----------------------------------------------------------------------------- */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 8px;
         background-color: transparent;
     }
 
     .stTabs [data-baseweb="tab"] {
-        background-color: #ffffff;
+        background-color: #ffffff !important;
         border-radius: 14px 14px 0 0 !important;
-        border: 2px solid #e2e8f0;
-        border-bottom: none;
-        padding: 10px 20px !important;
-        font-weight: 700 !important;
-        font-size: 16px !important;
-        color: #64748b !important;
-        transition: all 0.2s ease-in-out;
+        border: 2px solid #cbd5e1 !important;
+        border-bottom: none !important;
+        padding: 12px 20px !important;
+        font-weight: 800 !important;
+        font-size: 17px !important;
+        color: #334155 !important; /* Texto oscuro visible en inactivos */
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
-        color: #ffffff !important;
-        border-color: #4f46e5 !important;
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, #4f46e5, #3730a3) !important;
+        border-color: #3730a3 !important;
         box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    
+    /* Texto de la pestaña activa */
+    .stTabs [aria-selected="true"] p, 
+    .stTabs [aria-selected="true"] span {
+        color: #ffffff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
     /* -----------------------------------------------------------------------------
-       4. TARJETAS DE MUNDOS Y RETOS (GRADIENTES + SOMBRAS 3D)
+       4. TARJETAS DE MUNDOS Y RETOS (TEXTO BLANCO PROTEGIDO CON SOMBRA)
     ----------------------------------------------------------------------------- */
-    .math-card {
-        background: linear-gradient(135deg, #4f46e5, #3730a3);
+    .math-card, .fraction-card, .decimal-card {
         padding: 24px;
         border-radius: 24px;
-        color: white;
         text-align: center;
         font-size: 26px;
         font-weight: 700;
-        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3), inset 0 2px 0 rgba(255,255,255,0.2);
         margin-bottom: 20px;
+    }
+
+    .math-card {
+        background: linear-gradient(135deg, #4f46e5, #312e81);
         border: 3px solid #818cf8;
+        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
     }
 
     .fraction-card {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        padding: 24px;
-        border-radius: 24px;
-        color: white;
-        text-align: center;
-        font-size: 24px;
-        font-weight: 700;
-        box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3), inset 0 2px 0 rgba(255,255,255,0.2);
-        margin-bottom: 20px;
-        border: 3px solid #fbbf24;
+        background: linear-gradient(135deg, #d97706, #78350f);
+        border: 3px solid #f59e0b;
+        box-shadow: 0 10px 20px rgba(217, 119, 6, 0.3);
     }
 
     .decimal-card {
-        background: linear-gradient(135deg, #10b981, #047857);
-        padding: 24px;
-        border-radius: 24px;
-        color: white;
-        text-align: center;
-        font-size: 24px;
-        font-weight: 700;
-        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3), inset 0 2px 0 rgba(255,255,255,0.2);
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #059669, #064e3b);
         border: 3px solid #34d399;
+        box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
+    }
+
+    /* Forzar texto blanco de alto grosor dentro de las tarjetas */
+    .math-card, .math-card *, 
+    .fraction-card, .fraction-card *, 
+    .decimal-card, .decimal-card * {
+        color: #ffffff !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
     }
 
     /* Caja de Pista Pedagógica (CPA) */
     .cpa-box {
-        background-color: #ffffff;
-        border: 3px dashed #f59e0b;
+        background-color: #ffffff !important;
+        border: 3px dashed #d97706 !important;
         border-radius: 20px;
         padding: 22px;
         margin: 20px 0;
-        box-shadow: 0 6px 15px rgba(0,0,0,0.04);
-        color: #1e293b;
-        font-size: 16px;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+        font-size: 17px;
         line-height: 1.7;
     }
 
+    .cpa-box * {
+        color: #0f172a !important;
+    }
+
     /* -----------------------------------------------------------------------------
-       5. BOTONES ESTILO VIDEOJUEGO (GAMIFIED 3D BUTTONS)
+       5. BOTONES ESTILO VIDEOJUEGO
     ----------------------------------------------------------------------------- */
     .stButton > button {
         border-radius: 16px !important;
         font-family: 'Fredoka', sans-serif !important;
-        font-size: 18px !important;
+        font-size: 20px !important;
         font-weight: 700 !important;
-        padding: 12px 24px !important;
+        padding: 14px 24px !important;
         border: none !important;
-        background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
-        color: white !important;
-        box-shadow: 0 6px 0 #1e40af, 0 10px 15px rgba(0,0,0,0.15) !important;
-        transition: all 0.1s ease-in-out !important;
+        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 0 #1e3a8a, 0 10px 15px rgba(0,0,0,0.15) !important;
     }
 
-    .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 0 #1e40af, 0 12px 20px rgba(0,0,0,0.2) !important;
-        background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%) !important;
-    }
-
-    .stButton > button:active {
-        transform: translateY(4px) !important;
-        box-shadow: 0 2px 0 #1e40af, 0 4px 6px rgba(0,0,0,0.1) !important;
+    .stButton > button p, .stButton > button span {
+        color: #ffffff !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
     }
 
     /* -----------------------------------------------------------------------------
-       6. TARJETAS DE TIENDA Y AVATAR
+       6. TIENDA Y AVATAR
     ----------------------------------------------------------------------------- */
     .avatar-card {
-        background: #ffffff;
+        background: #ffffff !important;
         border-radius: 20px;
         padding: 18px;
         text-align: center;
-        border: 3px solid #e2e8f0;
+        border: 3px solid #cbd5e1 !important;
         box-shadow: 0 8px 16px rgba(0,0,0,0.04);
         margin-bottom: 15px;
-        transition: transform 0.2s ease;
     }
 
-    .avatar-card:hover {
-        transform: translateY(-4px);
-        border-color: #cbd5e1;
+    .avatar-card div {
+        color: #0f172a !important;
+        font-weight: 700 !important;
     }
 
     .fraction-visual {
         font-size: 34px;
         letter-spacing: 6px;
         margin: 15px 0;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     </style>
 """, unsafe_allow_html=True)
