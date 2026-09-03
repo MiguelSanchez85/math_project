@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import streamlit as st
 
-from ui import cargar_estilos
+import cpa
 
 # Intenta importar la conexión de Google Sheets
 try:
@@ -40,9 +40,1041 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 2. HOJA DE ESTILOS (ver style.css / DESIGN_NOTES.md)
+# 2. CSS — UI/UX para 8-11 anios (ver DESIGN_NOTES.md)
 # -----------------------------------------------------------------------------
-cargar_estilos()
+st.markdown("""
+<style>
+/* =============================================================================
+   MATH QUEST — GUARDIANES DEL NÚMERO
+   Hoja de estilos para Streamlit · Edad objetivo: 8–11 años (3º–6º primaria)
+   -----------------------------------------------------------------------------
+   Principios aplicados (ver DESIGN_NOTES.md para fuentes):
+   1. Objetivos táctiles grandes  -> min 48px alto, 56px en botones de respuesta
+   2. Tipografía legible          -> 18px base, 1.6 line-height, 0.01em tracking
+   3. Feedback inmediato y visible-> animaciones de acierto/error, color + icono
+   4. Carga cognitiva baja        -> una acción principal por pantalla, jerarquía
+   5. Color nunca solo            -> siempre color + forma + icono (daltonismo)
+   6. Contraste AA/AAA            -> texto principal >= 7:1 sobre su fondo
+   7. Afordancia física ("3D")    -> los botones parecen presionables
+   8. Movimiento respetuoso       -> prefers-reduced-motion desactiva todo
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap');
+
+/* -----------------------------------------------------------------------------
+   0. TOKENS DE DISEÑO
+   Cambiar aquí = cambiar todo el tema. No hay colores "sueltos" más abajo.
+   -------------------------------------------------------------------------- */
+:root {
+    /* --- Marca / acentos --- */
+    --mq-primary:        #4f46e5;   /* Índigo: acción principal */
+    --mq-primary-dark:   #3730a3;   /* Borde inferior 3D */
+    --mq-primary-light:  #eef2ff;   /* Fondos suaves */
+    --mq-primary-hover:  #4338ca;
+
+    --mq-success:        #16a34a;   /* Acierto */
+    --mq-success-dark:   #15803d;
+    --mq-success-light:  #f0fdf4;
+    --mq-success-border: #86efac;
+
+    --mq-warning:        #f59e0b;   /* Pista / atención */
+    --mq-warning-light:  #fffbeb;
+    --mq-warning-border: #fcd34d;
+
+    --mq-danger:         #e11d48;   /* Error — rosa, NO rojo alarma */
+    --mq-danger-light:   #fff1f2;
+    --mq-danger-border:  #fda4af;
+
+    --mq-gem:            #0891b2;   /* Gemas / economía del juego */
+    --mq-xp:             #f59e0b;   /* Nivel / estrellas */
+
+    /* --- Neutros --- */
+    --mq-bg:             #f2f7ff;   /* Fondo de app: azul cielo muy suave  */
+    --mq-surface:        #ffffff;
+    --mq-surface-alt:    #f8fafc;
+    --mq-border:         #dbe4f0;
+    --mq-border-strong:  #b9c7db;
+    --mq-text:           #172033;   /* 14.8:1 sobre blanco */
+    --mq-text-soft:      #4a5768;   /* 7.4:1  sobre blanco (AAA texto grande) */
+
+    /* --- Tipografía --- */
+    --mq-font: 'Fredoka', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    --mq-fs-base:   18px;   /* mínimo recomendado para lectores jóvenes */
+    --mq-fs-lg:     22px;
+    --mq-fs-xl:     28px;
+    --mq-fs-answer: 26px;   /* números dentro de los botones de respuesta */
+    --mq-lh:        1.65;
+
+    /* --- Forma y profundidad --- */
+    --mq-radius-sm:  14px;
+    --mq-radius:     22px;
+    --mq-radius-lg:  30px;
+    --mq-lift:       6px;    /* grosor del "borde inferior" 3D */
+    --mq-shadow:     0 10px 24px -10px rgba(23, 32, 51, 0.18);
+    --mq-shadow-lg:  0 18px 38px -14px rgba(79, 70, 229, 0.28);
+
+    /* --- Ritmo --- */
+    --mq-gap: 18px;
+    --mq-tap: 56px;          /* altura mínima de zona táctil */
+    --mq-ease: cubic-bezier(.34, 1.56, .64, 1);  /* rebote suave, "jugoso" */
+}
+
+/* -----------------------------------------------------------------------------
+   1. BASE
+   -------------------------------------------------------------------------- */
+html, body, .stApp, [class*="css"] {
+    font-family: var(--mq-font) !important;
+    color: var(--mq-text) !important;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.stApp {
+    /* Fondo con "textura" muy sutil: da calidez sin distraer del contenido */
+    background-color: var(--mq-bg) !important;
+    background-image:
+        radial-gradient(circle at 12% 8%,  rgba(129,140,248,.13) 0, transparent 42%),
+        radial-gradient(circle at 88% 4%,  rgba(45,212,191,.12)  0, transparent 38%),
+        radial-gradient(circle at 50% 100%, rgba(251,191,36,.10) 0, transparent 45%);
+    background-attachment: fixed;
+}
+
+.stApp p,
+.stApp li,
+.stApp label,
+.stApp .stMarkdown {
+    font-size: var(--mq-fs-base) !important;
+    line-height: var(--mq-lh) !important;
+    letter-spacing: .01em;
+}
+
+/* Bloque principal: ancho cómodo de lectura (≈60 caracteres por línea) */
+.block-container {
+    padding-top: 2.2rem !important;
+    padding-bottom: 5rem !important;
+    max-width: 900px;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--mq-font) !important;
+    font-weight: 700 !important;
+    color: var(--mq-text) !important;
+    letter-spacing: -.01em;
+}
+h1 { font-size: 40px !important; line-height: 1.2 !important; }
+h2 { font-size: 30px !important; }
+h3 { font-size: 24px !important; }
+
+/* Streamlit oculto: menú y footer no aportan nada a un niño de 9 años */
+#MainMenu, footer, .stDeployButton { visibility: hidden; }
+header[data-testid="stHeader"] { background: transparent !important; }
+
+/* Foco visible SIEMPRE — navegación por teclado y por tablet con teclado */
+*:focus-visible {
+    outline: 4px solid var(--mq-warning) !important;
+    outline-offset: 3px !important;
+    border-radius: var(--mq-radius-sm);
+}
+
+/* -----------------------------------------------------------------------------
+   2. BARRA LATERAL
+   -------------------------------------------------------------------------- */
+[data-testid="stSidebar"] {
+    background: var(--mq-surface) !important;
+    border-right: 4px solid var(--mq-border) !important;
+    box-shadow: 6px 0 24px -12px rgba(23,32,51,.14);
+}
+[data-testid="stSidebar"] .stRadio label,
+[data-testid="stSidebar"] p {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+}
+
+/* El logo del colegio: ancla de confianza, visible pero no protagonista */
+.logo-container {
+    background: linear-gradient(150deg, #ffffff 0%, var(--mq-primary-light) 100%);
+    border: 3px solid var(--mq-border);
+    border-radius: var(--mq-radius);
+    padding: 18px;
+    text-align: center;
+    box-shadow: var(--mq-shadow);
+    margin-bottom: 26px;
+}
+.logo-img { max-width: 140px; height: auto; }
+
+/* Selector de idioma como par de "pastillas" grandes y tocables */
+[data-testid="stSidebar"] [role="radiogroup"] { gap: 10px !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    background: var(--mq-surface-alt);
+    border: 2px solid var(--mq-border);
+    border-radius: var(--mq-radius-sm);
+    padding: 12px 14px !important;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all .16s var(--mq-ease);
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+    border-color: var(--mq-primary);
+    background: var(--mq-primary-light);
+    transform: translateX(3px);
+}
+
+/* -----------------------------------------------------------------------------
+   3. HUD — identidad, gemas y nivel
+   El niño debe poder responder "¿quién soy y cómo voy?" en menos de 1 segundo.
+   -------------------------------------------------------------------------- */
+.hud-card {
+    background: var(--mq-surface);
+    border: 3px solid var(--mq-border);
+    border-bottom: var(--mq-lift) solid var(--mq-border-strong);
+    border-radius: var(--mq-radius);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--mq-gap);
+    margin-bottom: 22px;
+    box-shadow: var(--mq-shadow);
+}
+
+/* Contadores (💎 gemas / ⭐ nivel) escritos con `code` por Streamlit */
+.stApp code {
+    font-family: var(--mq-font) !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    background: var(--mq-primary-light) !important;
+    color: var(--mq-primary) !important;
+    padding: 4px 14px !important;
+    border-radius: var(--mq-radius-sm) !important;
+    border: 2px solid #c7d2fe !important;
+}
+
+/* Micro-latido al cambiar el marcador: refuerza la recompensa */
+@keyframes mq-pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+.stApp h3 code { animation: mq-pop .5s var(--mq-ease); }
+
+/* -----------------------------------------------------------------------------
+   4. PESTAÑAS = "MUNDOS" DEL JUEGO
+   Deben leerse como fichas de un tablero, no como pestañas de navegador.
+   -------------------------------------------------------------------------- */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 10px;
+    background: transparent;
+    padding: 4px 0 12px;
+    flex-wrap: wrap;                /* en móvil bajan de línea, no se comprimen */
+    border-bottom: none !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: var(--mq-surface) !important;
+    border: 3px solid var(--mq-border) !important;
+    border-bottom: 5px solid var(--mq-border-strong) !important;
+    border-radius: var(--mq-radius-sm) !important;
+    padding: 12px 20px !important;
+    min-height: 52px;
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    color: var(--mq-text-soft) !important;
+    transition: transform .14s var(--mq-ease), background .14s, border-color .14s;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    transform: translateY(-3px);
+    border-color: var(--mq-primary) !important;
+    background: var(--mq-primary-light) !important;
+    color: var(--mq-primary) !important;
+}
+
+/* Estado activo: color + elevación + peso. Tres señales, no solo color. */
+.stTabs [aria-selected="true"] {
+    background: var(--mq-primary) !important;
+    border-color: var(--mq-primary-hover) !important;
+    border-bottom: 5px solid var(--mq-primary-dark) !important;
+    color: #ffffff !important;
+    transform: translateY(-3px);
+    box-shadow: var(--mq-shadow-lg);
+}
+.stTabs [aria-selected="true"] p,
+.stTabs [aria-selected="true"] span { color: #fff !important; font-weight: 700 !important; }
+
+/* Streamlit dibuja un subrayado deslizante que sobra en este diseño */
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] { display: none !important; }
+
+/* -----------------------------------------------------------------------------
+   5. TARJETA DE PREGUNTA — el corazón de la pantalla
+   -------------------------------------------------------------------------- */
+.question-card {
+    background: var(--mq-surface) !important;
+    border: 3px solid #dfe4ff !important;
+    border-bottom: 9px solid #c3cbff !important;
+    border-radius: var(--mq-radius-lg) !important;
+    padding: 30px 28px !important;
+    text-align: center !important;
+    font-size: var(--mq-fs-lg) !important;
+    font-weight: 500 !important;
+    line-height: var(--mq-lh) !important;
+    color: var(--mq-text) !important;
+    box-shadow: var(--mq-shadow-lg) !important;
+    margin-bottom: 26px !important;
+    position: relative;
+    overflow: hidden;
+    animation: mq-card-in .4s var(--mq-ease);
+}
+
+/* Franja superior de color: identifica el mundo de un vistazo */
+.question-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 8px;
+    background: linear-gradient(90deg,
+        var(--mq-primary) 0%, #38bdf8 33%, #34d399 66%, var(--mq-warning) 100%);
+}
+
+@keyframes mq-card-in {
+    from { opacity: 0; transform: translateY(14px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Los datos del enunciado en negrita destacan más que el texto corrido */
+.question-card strong,
+.question-card b {
+    color: var(--mq-primary) !important;
+    font-weight: 700 !important;
+}
+
+.question-badge {
+    display: inline-block;
+    background: var(--mq-primary-light);
+    color: var(--mq-primary);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 6px 18px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 14px;
+    border: 2px solid #c7d2fe;
+}
+
+/* Resaltado del dato clave: el ojo debe ir ahí primero */
+.highlight-text {
+    color: var(--mq-primary) !important;
+    font-weight: 700 !important;
+    background: linear-gradient(180deg, transparent 58%, #dbeafe 58%);
+    padding: 2px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+/* Representación visual concreta (barras de fracción, valor posicional).
+   Fase "C" del método CPA: Concreto → Pictórico → Abstracto. */
+.fraction-visual {
+    font-size: 34px;
+    letter-spacing: 8px;
+    line-height: 1.5;
+    margin: 20px auto 6px;
+    background: var(--mq-surface-alt);
+    padding: 16px 14px;
+    border-radius: var(--mq-radius);
+    border: 3px dashed var(--mq-border-strong);
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* -----------------------------------------------------------------------------
+   6. CAJA DE PISTA (CPA) — nunca castiga, siempre enseña
+   El error debe leerse como "te ayudo", no como "te equivocaste".
+   -------------------------------------------------------------------------- */
+.cpa-box {
+    background: var(--mq-warning-light) !important;
+    border: 3px solid var(--mq-warning-border) !important;
+    border-bottom: var(--mq-lift) solid var(--mq-warning) !important;
+    border-radius: var(--mq-radius) !important;
+    padding: 22px 24px 22px 60px;
+    margin: 22px 0;
+    font-size: var(--mq-fs-base);
+    line-height: var(--mq-lh);
+    color: #713f12 !important;
+    position: relative;
+    box-shadow: var(--mq-shadow);
+    animation: mq-card-in .35s var(--mq-ease);
+}
+.cpa-box::before {
+    content: "💡";
+    position: absolute;
+    left: 18px;
+    top: 20px;
+    font-size: 26px;
+    animation: mq-glow 2s ease-in-out infinite;
+}
+.cpa-box b { color: #854d0e !important; }
+
+@keyframes mq-glow {
+    0%, 100% { transform: scale(1);    opacity: 1;   }
+    50%      { transform: scale(1.15); opacity: .85; }
+}
+
+/* -----------------------------------------------------------------------------
+   7. BOTONES
+   Regla: todo lo que se pueda tocar debe PARECER que se puede tocar,
+   y debe hundirse al presionarlo (feedback físico inmediato).
+   -------------------------------------------------------------------------- */
+.stButton > button,
+.stFormSubmitButton > button {
+    width: 100%;
+    min-height: var(--mq-tap);
+    border-radius: var(--mq-radius) !important;
+    font-family: var(--mq-font) !important;
+    font-size: var(--mq-fs-answer) !important;
+    font-weight: 700 !important;
+    padding: 14px 20px !important;
+    background: linear-gradient(180deg, #6366f1 0%, var(--mq-primary) 100%) !important;
+    color: #ffffff !important;
+    border: 3px solid var(--mq-primary-hover) !important;
+    border-bottom: var(--mq-lift) solid var(--mq-primary-dark) !important;
+    box-shadow: var(--mq-shadow-lg) !important;
+    cursor: pointer;
+    transition: transform .1s var(--mq-ease), filter .12s, box-shadow .12s;
+}
+
+.stButton > button:hover,
+.stFormSubmitButton > button:hover {
+    filter: brightness(1.08);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 34px -12px rgba(79,70,229,.42) !important;
+}
+
+/* El "clic jugoso": el botón baja hasta apoyarse en su propio borde */
+.stButton > button:active,
+.stFormSubmitButton > button:active {
+    transform: translateY(var(--mq-lift));
+    border-bottom-width: 1px !important;
+    box-shadow: none !important;
+}
+
+.stButton > button p,
+.stButton > button span,
+.stFormSubmitButton > button p {
+    color: #ffffff !important;
+    font-size: var(--mq-fs-answer) !important;
+    font-weight: 700 !important;
+}
+
+/* Separación entre opciones de respuesta: evita el toque accidental,
+   crítico en tablets y en niños con motricidad fina aún en desarrollo. */
+[data-testid="column"] .stButton { margin-bottom: 14px; }
+[data-testid="column"] { padding: 0 7px !important; }
+
+/* Botón de inicio de sesión: es LA acción de la pantalla, va en verde "adelante" */
+.stFormSubmitButton > button {
+    background: linear-gradient(180deg, #22c55e 0%, var(--mq-success) 100%) !important;
+    border-color: var(--mq-success-dark) !important;
+    border-bottom-color: #14532d !important;
+    font-size: 28px !important;
+}
+
+/* -----------------------------------------------------------------------------
+   8. FORMULARIOS Y ENTRADAS
+   -------------------------------------------------------------------------- */
+.stTextInput input,
+.stNumberInput input,
+.stSelectbox [data-baseweb="select"] > div {
+    font-family: var(--mq-font) !important;
+    font-size: 22px !important;
+    font-weight: 600 !important;
+    min-height: var(--mq-tap) !important;
+    border-radius: var(--mq-radius-sm) !important;
+    border: 3px solid var(--mq-border) !important;
+    background: var(--mq-surface) !important;
+    color: var(--mq-text) !important;
+    padding: 10px 16px !important;
+}
+.stTextInput input:focus,
+.stNumberInput input:focus {
+    border-color: var(--mq-primary) !important;
+    box-shadow: 0 0 0 4px var(--mq-primary-light) !important;
+}
+
+/* Etiquetas: instrucción corta, siempre visible, nunca solo un placeholder */
+.stTextInput label,
+.stNumberInput label,
+.stSelectbox label {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: var(--mq-text) !important;
+    margin-bottom: 6px !important;
+}
+
+/* Los +/- del number_input son objetivos táctiles reales */
+.stNumberInput button {
+    min-width: 46px !important;
+    min-height: 46px !important;
+    border-radius: 12px !important;
+    background: var(--mq-primary-light) !important;
+    border: 2px solid #c7d2fe !important;
+    color: var(--mq-primary) !important;
+}
+
+[data-testid="stForm"] {
+    background: var(--mq-surface);
+    border: 3px solid var(--mq-border);
+    border-bottom: var(--mq-lift) solid var(--mq-border-strong);
+    border-radius: var(--mq-radius-lg);
+    padding: 30px !important;
+    box-shadow: var(--mq-shadow-lg);
+}
+
+/* -----------------------------------------------------------------------------
+   9. MENSAJES DE ACIERTO / ERROR
+   Color + icono + movimiento. Nunca depende únicamente del color.
+   -------------------------------------------------------------------------- */
+[data-testid="stAlert"] {
+    border-radius: var(--mq-radius) !important;
+    font-size: var(--mq-fs-lg) !important;
+    font-weight: 600 !important;
+    padding: 20px 24px !important;
+    border: 3px solid transparent !important;
+    border-bottom-width: var(--mq-lift) !important;
+    box-shadow: var(--mq-shadow);
+}
+[data-testid="stAlert"] p { font-size: var(--mq-fs-lg) !important; font-weight: 600 !important; }
+
+/* Éxito — celebra y se queda: refuerzo positivo */
+[data-testid="stAlert"][data-baseweb="notification"]:has(svg),
+.stAlert:has([data-testid="stAlertContentSuccess"]) {
+    animation: mq-cheer .55s var(--mq-ease);
+}
+[data-testid="stAlertContentSuccess"],
+div[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]) {
+    background: var(--mq-success-light) !important;
+    border-color: var(--mq-success-border) !important;
+    color: #14532d !important;
+}
+
+/* Error — atenuado a rosa y con "meneo" corto: señala sin asustar */
+[data-testid="stAlertContentError"],
+div[data-testid="stAlert"]:has([data-testid="stAlertContentError"]) {
+    background: var(--mq-danger-light) !important;
+    border-color: var(--mq-danger-border) !important;
+    color: #881337 !important;
+    animation: mq-shake .4s ease-in-out;
+}
+
+[data-testid="stAlertContentWarning"],
+div[data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]) {
+    background: var(--mq-warning-light) !important;
+    border-color: var(--mq-warning-border) !important;
+    color: #713f12 !important;
+}
+
+@keyframes mq-cheer {
+    0%   { transform: scale(.92); opacity: 0; }
+    60%  { transform: scale(1.03); opacity: 1; }
+    100% { transform: scale(1); }
+}
+@keyframes mq-shake {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-7px); }
+    75%      { transform: translateX(7px); }
+}
+
+/* Toast de compra */
+[data-testid="stToast"] {
+    border-radius: var(--mq-radius) !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    border: 3px solid var(--mq-primary) !important;
+    background: var(--mq-surface) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   10. TIENDA Y AVATAR
+   -------------------------------------------------------------------------- */
+.shop-card {
+    background: var(--mq-surface) !important;
+    border: 3px solid var(--mq-border) !important;
+    border-bottom: var(--mq-lift) solid var(--mq-border-strong) !important;
+    border-radius: var(--mq-radius) !important;
+    padding: 22px 16px !important;
+    text-align: center;
+    margin-bottom: 12px;
+    box-shadow: var(--mq-shadow);
+    transition: transform .16s var(--mq-ease), box-shadow .16s;
+}
+.shop-card:hover {
+    transform: translateY(-5px) rotate(-1deg);
+    box-shadow: var(--mq-shadow-lg);
+}
+.shop-card img {
+    width: 64px !important;
+    height: 64px !important;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 8px rgba(23,32,51,.18));
+}
+.shop-card div:nth-of-type(1) { font-size: 18px !important; font-weight: 700 !important; }
+.shop-card div:nth-of-type(2) {
+    font-size: 14px !important;
+    color: var(--mq-text-soft) !important;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+/* -----------------------------------------------------------------------------
+   11. VARIOS
+   -------------------------------------------------------------------------- */
+hr, [data-testid="stDivider"] {
+    border: none !important;
+    height: 4px !important;
+    border-radius: 4px;
+    background: linear-gradient(90deg, transparent, var(--mq-border), transparent) !important;
+    margin: 26px 0 !important;
+}
+
+.stCaption, [data-testid="stCaptionContainer"] p {
+    font-size: 17px !important;
+    color: var(--mq-text-soft) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   12. RESPONSIVE — la mayoría de aulas usa tablet en vertical
+   -------------------------------------------------------------------------- */
+@media (max-width: 780px) {
+    :root {
+        --mq-fs-base: 17px;
+        --mq-fs-lg:   20px;
+        --mq-fs-answer: 23px;
+    }
+    .block-container { padding: 1.2rem .9rem 4rem !important; }
+    h1 { font-size: 30px !important; }
+    .question-card { padding: 24px 18px !important; border-radius: var(--mq-radius) !important; }
+    .stTabs [data-baseweb="tab"] { padding: 10px 14px !important; font-size: 15px !important; }
+    .fraction-visual { font-size: 26px; letter-spacing: 5px; }
+    /* En pantallas estrechas las 2 columnas de respuestas pasan a 1 */
+    [data-testid="column"] { min-width: 100% !important; }
+}
+
+/* -----------------------------------------------------------------------------
+   13. ACCESIBILIDAD
+   -------------------------------------------------------------------------- */
+
+/* Niños con sensibilidad vestibular, TDAH o autismo: sin animación. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+    .stButton > button:hover,
+    .stTabs [data-baseweb="tab"]:hover,
+    .shop-card:hover { transform: none !important; }
+}
+
+/* Modo alto contraste del sistema operativo */
+@media (prefers-contrast: more) {
+    :root {
+        --mq-text: #000000;
+        --mq-text-soft: #1f2937;
+        --mq-border: #64748b;
+        --mq-border-strong: #334155;
+    }
+    .question-card, .shop-card, [data-testid="stForm"] { border-width: 4px !important; }
+}
+
+/* La app se fuerza en claro: el tema oscuro de Streamlit rompería
+   los contrastes calculados arriba y no aporta nada en un aula. */
+@media (prefers-color-scheme: dark) {
+    .stApp { background-color: var(--mq-bg) !important; color: var(--mq-text) !important; }
+    .question-card, .shop-card, .hud-card, [data-testid="stForm"] {
+        background: var(--mq-surface) !important;
+        color: var(--mq-text) !important;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   14. EXPLICACIÓN CPA (Concreto → Pictórico → Abstracto)
+   La pista no da la respuesta: construye el concepto y la respuesta cierra.
+   Ver cpa.py para el contenido pedagógico.
+   -------------------------------------------------------------------------- */
+
+/* Cada paso numerado del razonamiento */
+.cpa-step {
+    margin: 0 0 16px;
+    padding: 0 0 14px;
+    border-bottom: 2px dashed rgba(180, 132, 20, .25);
+}
+.cpa-step:last-of-type { border-bottom: none; padding-bottom: 4px; }
+
+.cpa-step-label {
+    display: inline-block;
+    background: var(--mq-warning);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+.cpa-step-body { font-size: 17px; line-height: 1.6; }
+
+/* La respuesta: separada, al final, nunca es lo primero que se lee */
+.cpa-result {
+    margin-top: 14px;
+    padding: 14px 18px;
+    background: var(--mq-surface);
+    border: 3px solid var(--mq-warning-border);
+    border-radius: var(--mq-radius-sm);
+    font-size: 21px;
+    font-weight: 700;
+    text-align: center;
+    color: #854d0e;
+}
+
+/* --- Rejilla de multiplicación / división ---
+   Una fila por grupo. El número de fila a la izquierda y el acumulado a la
+   derecha son lo que convierte el dibujo en explicación: el niño ve el
+   conteo salteado construirse (5, 10, 15...). */
+.cpa-grid {
+    margin: 12px 0;
+    background: #fff;
+    border: 2px solid var(--mq-warning-border);
+    border-radius: var(--mq-radius-sm);
+    padding: 12px 14px;
+    overflow-x: auto;
+}
+.cpa-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    padding: 2px 0;
+}
+.cpa-blocks { display: inline-flex; gap: 3px; }
+
+/* Cada bloque es un cuadro real, no un carácter suelto */
+.cpa-blk {
+    font-size: 22px;
+    line-height: 1;
+    font-style: normal;
+}
+.cpa-grid.sm .cpa-blk { font-size: 16px; }
+.cpa-grid.sm .cpa-blocks { gap: 2px; }
+
+/* Número de grupo (1, 2, 3...) */
+.cpa-row-n {
+    flex-shrink: 0;
+    width: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #b45309;
+    text-align: right;
+}
+.cpa-row-n::after { content: "·"; margin-left: 3px; }
+
+/* Acumulado: la columna que enseña a contar de N en N */
+.cpa-count {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding-left: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #92400e;
+}
+.cpa-count::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 2px;
+    background: #fcd34d;
+    vertical-align: middle;
+    margin-right: 7px;
+}
+.cpa-row:last-child .cpa-count {
+    background: var(--mq-warning);
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 12px;
+    margin-left: auto;
+}
+.cpa-row:last-child .cpa-count::before { display: none; }
+
+/* --- Figuras geométricas dibujadas --- */
+.cpa-figure { margin: 12px 0; text-align: center; }
+.cpa-fig-top,
+.cpa-fig-side {
+    font-size: 13px;
+    font-weight: 700;
+    color: #92400e;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.cpa-fig-top { margin-bottom: 6px; }
+.cpa-fig-side { margin-top: 6px; }
+.cpa-figure .cpa-grid { display: inline-block; text-align: left; }
+.cpa-figure .cpa-row { gap: 0; }
+
+.cpa-svg {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    margin: 10px auto;
+    display: block;
+}
+.cpa-svg-t {
+    font-family: var(--mq-font);
+    font-size: 19px;
+    font-weight: 700;
+    fill: #1e3a8a;
+    text-anchor: middle;
+}
+
+/* --- Barra de modelo (método de barras, estilo Singapur) --- */
+.cpa-bar { margin: 10px 0; }
+.cpa-bar-whole {
+    display: block;
+    background: linear-gradient(180deg, #93c5fd, #60a5fa);
+    color: #0b2e5c;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid #3b82f6;
+}
+
+/* --- Figuras geométricas --- */
+.cpa-shape { text-align: center; margin: 10px 0; font-weight: 700; }
+.cpa-shape-top { color: #92400e; font-size: 15px; }
+.cpa-shape-mid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #92400e;
+    font-size: 15px;
+}
+.cpa-shape-box { font-size: 42px; line-height: 1; }
+.cpa-tri { text-align: center; font-size: 40px; line-height: 1.2; }
+.cpa-tri span { font-size: 15px; font-weight: 700; color: #92400e; }
+
+/* --- Fracciones: barra de partes iguales --- */
+.cpa-frac-bar {
+    display: flex;
+    gap: 3px;
+    margin: 12px 0 8px;
+    height: 46px;
+}
+.cpa-frac-bar span {
+    flex: 1;
+    border-radius: 8px;
+    border: 2px solid #86efac;
+}
+.cpa-frac-on  { background: linear-gradient(180deg, #4ade80, #22c55e); }
+.cpa-frac-off { background: repeating-linear-gradient(45deg, #fff, #fff 5px, #f1f5f9 5px, #f1f5f9 10px); }
+
+.cpa-frac-legend { font-size: 14px; color: #713f12; }
+.cpa-frac-legend span {
+    display: inline-block;
+    width: 15px; height: 15px;
+    border-radius: 4px;
+    vertical-align: -2px;
+    border: 2px solid #86efac;
+}
+
+/* La fracción escrita como fracción de verdad, no como "3/4" */
+.cpa-frac-math {
+    display: inline-block;
+    text-align: center;
+    margin: 6px 14px 10px 0;
+    vertical-align: middle;
+}
+.cpa-frac-math .cpa-num,
+.cpa-frac-math .cpa-den {
+    display: block;
+    font-size: 26px;
+    font-weight: 700;
+    color: #854d0e;
+    line-height: 1.1;
+}
+.cpa-frac-math .cpa-line {
+    display: block;
+    height: 3px;
+    background: #854d0e;
+    border-radius: 2px;
+    margin: 3px 0;
+}
+
+/* --- Decimales: tabla de valor posicional --- */
+.cpa-place {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+}
+.cpa-place > div { text-align: center; }
+.cpa-place-h {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #92400e;
+    margin-bottom: 4px;
+}
+.cpa-place-v {
+    display: block;
+    font-size: 30px;
+    font-weight: 700;
+    color: #854d0e;
+    background: #fff;
+    border: 3px solid var(--mq-warning-border);
+    border-radius: 12px;
+    padding: 6px 18px;
+    min-width: 54px;
+}
+.cpa-place-dot { font-size: 34px; font-weight: 700; color: #b45309; padding-bottom: 4px; }
+
+/* --- Decimales: comparación A vs B --- */
+.cpa-compare {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 12px 0;
+}
+.cpa-comp-item {
+    background: #fff;
+    border: 3px solid var(--mq-warning-border);
+    border-radius: var(--mq-radius-sm);
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 90px;
+}
+.cpa-comp-item b { display: block; font-size: 13px; color: #92400e; }
+.cpa-comp-item span { font-size: 26px; font-weight: 700; color: #854d0e; }
+.cpa-comp-vs { font-weight: 700; color: #b45309; font-size: 15px; }
+
+/* --- Decimales: cadena de conversión --- */
+.cpa-convert {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #92400e;
+    margin: 12px 0;
+    line-height: 2;
+}
+.cpa-convert span {
+    background: #fff;
+    border: 2px solid var(--mq-warning-border);
+    border-radius: 10px;
+    padding: 5px 12px;
+    display: inline-block;
+}
+.cpa-convert-out { background: var(--mq-warning) !important; color: #fff !important; }
+
+@media (max-width: 780px) {
+    .cpa-grid { font-size: 17px; letter-spacing: 1px; }
+    .cpa-step-body { font-size: 16px; }
+    .cpa-result { font-size: 19px; }
+    .cpa-place-v { font-size: 24px; padding: 5px 12px; min-width: 44px; }
+}
+
+/* -----------------------------------------------------------------------------
+   15. LEYENDAS DE LOS DIBUJOS CPA
+   Un dibujo sin rótulos es un jeroglífico: hay que decir qué es cada columna.
+   -------------------------------------------------------------------------- */
+
+/* Cabecera de la rejilla de multiplicación */
+.cpa-grid-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #fde68a;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #b45309;
+    white-space: nowrap;
+}
+.cpa-h-n { width: 24px; text-align: right; flex-shrink: 0; }
+.cpa-h-b { flex: 1; }
+.cpa-h-c { margin-left: auto; flex-shrink: 0; }
+
+/* --- División dibujada como REPARTO en grupos --- */
+.cpa-share {
+    margin: 12px 0;
+    background: #fff;
+    border: 2px solid var(--mq-warning-border);
+    border-radius: var(--mq-radius-sm);
+    padding: 12px 14px;
+    overflow-x: auto;
+}
+.cpa-share-head {
+    font-size: 13px;
+    font-weight: 700;
+    color: #b45309;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #fde68a;
+    text-align: center;
+}
+
+/* Cada grupo es una caja rotulada: eso es lo que faltaba */
+.cpa-share-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    background: #fffbeb;
+    border: 2px dashed #fcd34d;
+    border-radius: 10px;
+}
+.cpa-share-row:last-child { margin-bottom: 0; }
+
+.cpa-share-tag {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #92400e;
+    background: #fef3c7;
+    border-radius: 999px;
+    padding: 3px 10px;
+    min-width: 62px;
+    text-align: center;
+}
+.cpa-share-get {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding-left: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #92400e;
+}
+.cpa-share.sm .cpa-blk { font-size: 16px; }
+.cpa-share.sm .cpa-blocks { gap: 2px; }
+
+@media (max-width: 780px) {
+    .cpa-grid-head, .cpa-share-head { font-size: 10px; }
+    .cpa-share-tag { min-width: 52px; font-size: 11px; }
+    .cpa-share-get { font-size: 11px; }
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 3. GENERADORES DINÁMICOS BILINGÜES MULTI-IDIOMA
@@ -178,6 +1210,14 @@ def nuevo_reto_operaciones(idioma="Español"):
         st.session_state.num2 = divisor
         st.session_state.correcta_op = resultado
 
+    # Las opciones se barajan AQUI y se guardan en el estado.
+    # Si se barajaran en el render, cada rerun cambiaria la key de los botones
+    # y el clic del nino se perderia (la app parecia bloquearse).
+    c = st.session_state.correcta_op
+    opciones = list({c, c + 2, max(1, c - 1), c + 3})
+    random.shuffle(opciones)
+    st.session_state.opciones_op = opciones
+
     st.session_state.mostrar_pista_op = False
     st.session_state.reto_op_id = time.time()
 
@@ -187,6 +1227,12 @@ def nuevo_reto_fracciones():
     num = random.randint(1, den - 1)
     st.session_state.denominador = den
     st.session_state.numerador = num
+    correcta = f"{num}/{den}"
+    opciones = list({correcta, f"{den - num}/{den}",
+                     f"{num}/{den + 1 if den < 8 else den - 1}"})
+    random.shuffle(opciones)
+    st.session_state.opciones_frac = opciones
+
     st.session_state.mostrar_pista_frac = False
     st.session_state.reto_frac_id = time.time()
 
@@ -456,7 +1502,7 @@ with tab_prob:
         st.warning(t["p1_wrong"])
 
     if st.session_state.mostrar_pista_prob:
-        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {t["correct_answer_label"]} <b>{pdata["correcta"]}</b></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b>{cpa.explicar_problema(pdata, lang)}</div>', unsafe_allow_html=True)
 
 # === MUNDO 2: GEOMETRÍA ===
 with tab_geom:
@@ -487,7 +1533,7 @@ with tab_geom:
     st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_geom"]}</div><br>{prompt}</div>', unsafe_allow_html=True)
 
     if st.session_state.mostrar_pista_geom:
-        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {pista}<br>• {t["correct_answer_label"]} <b>{gdata["correcta"]}</b></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b>{cpa.explicar_geometria(gdata, lang)}</div>', unsafe_allow_html=True)
 
     g_cols = st.columns(2)
     for idx, opt in enumerate(gdata["opciones"]):
@@ -517,10 +1563,9 @@ with tab_op:
     st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_op"]}</div><br>{t["op_question"]} <span class="highlight-text">{n1} {q_sym} {n2}</span>?</div>', unsafe_allow_html=True)
 
     if st.session_state.mostrar_pista_op:
-        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {t["correct_answer_label"]} <b>{correcta_o}</b></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b>{cpa.explicar_operacion(tipo_op, n1, n2, correcta_o, lang)}</div>', unsafe_allow_html=True)
 
-    opciones_o = list({correcta_o, correcta_o + 2, max(1, correcta_o - 1), correcta_o + 3})
-    random.shuffle(opciones_o)
+    opciones_o = st.session_state.opciones_op
 
     g1, g2 = st.columns(2)
     for idx, opt in enumerate(opciones_o):
@@ -547,13 +1592,11 @@ with tab_frac:
     q_txt = "Which fraction represents this bar?" if lang == "English" else "¿Qué fracción representa esta barra?"
     st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_frac"]}</div><br>{q_txt}<div class="fraction-visual">{bloques}</div></div>', unsafe_allow_html=True)
     correcta_f = f"{num}/{den}"
-    distractoras = [f"{den - num}/{den}", f"{num}/{den + 1 if den < 8 else den - 1}"]
 
     if st.session_state.mostrar_pista_frac:
-        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• Numerator = {num} / Denominator = {den}' if lang == "English" else f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• Numerador = {num} / Denominador = {den}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b>{cpa.explicar_fraccion(num, den, lang)}</div>', unsafe_allow_html=True)
 
-    opciones_f = list(set([correcta_f] + distractoras))
-    random.shuffle(opciones_f)
+    opciones_f = st.session_state.opciones_frac
 
     gf1, gf2 = st.columns(2)
     for idx, opt in enumerate(opciones_f):
@@ -591,7 +1634,7 @@ with tab_dec:
     st.markdown(f'<div class="question-card"><div class="question-badge">{t["tab_dec"]}</div><br>{prompt}</div>', unsafe_allow_html=True)
 
     if st.session_state.mostrar_pista_dec:
-        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b><br>• {t["correct_answer_label"]} <b>{st.session_state.dec_correcta}</b></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="cpa-box"><b>{t["cpa_title"]}</b>{cpa.explicar_decimal(tipo_d, d_data, st.session_state.dec_correcta, lang)}</div>', unsafe_allow_html=True)
 
     gd1, gd2 = st.columns(2)
     for idx, opt in enumerate(st.session_state.dec_opciones):
