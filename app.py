@@ -222,6 +222,62 @@ header[data-testid="stHeader"] { background: transparent !important; }
 }
 
 /* -----------------------------------------------------------------------------
+   2-bis. BLOQUE DE OPINION (Google Forms)
+   Va en la barra lateral: visible para el adulto que acompania, pero fuera
+   del camino del nino que esta jugando. Enlace externo -> pestania nueva.
+   -------------------------------------------------------------------------- */
+.mq-feedback {
+    margin-top: 28px;
+    padding: 16px 14px;
+    background: var(--mq-surface-alt);
+    border: 2px dashed var(--mq-border-strong);
+    border-radius: var(--mq-radius);
+    text-align: center;
+}
+.mq-feedback-title {
+    font-family: var(--mq-font);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mq-text);
+    margin-bottom: 4px;
+}
+.mq-feedback-body {
+    font-size: 13px !important;
+    line-height: 1.45;
+    color: var(--mq-text-soft) !important;
+    margin: 0 0 12px !important;
+}
+
+/* Se estiliza como los botones del juego: mismo lenguaje visual, mismo
+   objetivo tactil de 48px, misma afordancia "presionable". */
+.mq-feedback-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 10px 14px;
+    background: var(--mq-primary) !important;
+    color: #ffffff !important;
+    font-family: var(--mq-font);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none !important;
+    border-radius: var(--mq-radius-sm);
+    border-bottom: 4px solid var(--mq-primary-dark);
+    transition: transform .14s var(--mq-ease), background .14s;
+    overflow-wrap: break-word;
+}
+.mq-feedback-cta:hover {
+    background: var(--mq-primary-hover) !important;
+    transform: translateY(-2px);
+    color: #ffffff !important;
+}
+.mq-feedback-cta:active {
+    transform: translateY(2px);
+    border-bottom-width: 2px;
+}
+
+/* -----------------------------------------------------------------------------
    3. HUD — identidad, gemas y nivel
    El niño debe poder responder "¿quién soy y cómo voy?" en menos de 1 segundo.
    -------------------------------------------------------------------------- */
@@ -645,6 +701,87 @@ hr, [data-testid="stDivider"] {
 /* -----------------------------------------------------------------------------
    12. RESPONSIVE — la mayoría de aulas usa tablet en vertical
    -------------------------------------------------------------------------- */
+/* -----------------------------------------------------------------------------
+   11-bis. HUD DE IDENTIDAD — avatar + nombre
+   Fluido por diseno: el nombre se encoge con el viewport pero nunca baja de
+   16px, y si aun asi no cabe se corta con puntos suspensivos en vez de
+   desbordar la pantalla.
+   -------------------------------------------------------------------------- */
+.mq-hud-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;               /* imprescindible para que el hijo pueda encoger */
+}
+.mq-hud-name {
+    font-size: clamp(16px, 4.2vw, 22px);
+    font-weight: 800;
+    color: #0f172a;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Reglas base de contencion: valen en TODOS los tamanios ---------------
+   Nada puede empujar el ancho de la pagina. Un nino con tablet en vertical
+   que tiene que hacer scroll horizontal para leer una pregunta, abandona. */
+html, body, .stApp { max-width: 100%; overflow-x: hidden; }
+.block-container { width: 100%; }
+
+/* Todo lo que puede desbordar (dibujos CPA, tablas, codigo) scrollea DENTRO
+   de su propia caja, nunca arrastrando la pagina entera. */
+.cpa-grid, .cpa-share, .cpa-place, .cpa-convert,
+.stTable, [data-testid="stTable"], .stDataFrame, [data-testid="stDataFrame"] {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Imagenes y media: nunca mas anchas que su contenedor */
+img, svg, video { max-width: 100%; height: auto; }
+
+/* Palabras largas (nombres, enunciados en ingles) parten en vez de desbordar */
+.question-card, .shop-card, .hud-card, .stMarkdown p, h1, h2, h3 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* La fila de pestanias es scrollable en horizontal cuando no caben las 6.
+   Se envuelve en pantallas medianas y scrollea en las muy estrechas. */
+.stTabs [data-baseweb="tab-list"] {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+.stTabs [data-baseweb="tab"] { flex-shrink: 0; }
+
+/* Los botones de respuesta nunca cortan su texto */
+.stButton > button {
+    white-space: normal !important;
+    height: auto !important;
+}
+
+/* -----------------------------------------------------------------------------
+   12. RESPONSIVE POR CAPAS
+   Cuatro escalones reales, no uno solo:
+     >1100px  laptop / proyector de aula
+     <=1100px tablet horizontal
+     <=780px  tablet vertical  (el caso mas comun en aula)
+     <=520px  movil            (padres revisando en casa)
+     <=380px  movil pequenio
+   Mas un ajuste para movil en horizontal (alto util minusculo).
+   -------------------------------------------------------------------------- */
+
+/* --- Tablet horizontal ---------------------------------------------------- */
+@media (max-width: 1100px) {
+    .block-container { padding-left: 1.6rem !important; padding-right: 1.6rem !important; }
+    h1 { font-size: 36px !important; }
+    .stTabs [data-baseweb="tab"] { padding: 12px 16px !important; font-size: 16px !important; }
+}
+
+/* --- Tablet vertical: el escenario principal del aula --------------------- */
 @media (max-width: 780px) {
     :root {
         --mq-fs-base: 17px;
@@ -653,11 +790,141 @@ hr, [data-testid="stDivider"] {
     }
     .block-container { padding: 1.2rem .9rem 4rem !important; }
     h1 { font-size: 30px !important; }
+    h2 { font-size: 25px !important; }
+    h3 { font-size: 21px !important; }
     .question-card { padding: 24px 18px !important; border-radius: var(--mq-radius) !important; }
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
     .stTabs [data-baseweb="tab"] { padding: 10px 14px !important; font-size: 15px !important; }
     .fraction-visual { font-size: 26px; letter-spacing: 5px; }
-    /* En pantallas estrechas las 2 columnas de respuestas pasan a 1 */
-    [data-testid="column"] { min-width: 100% !important; }
+
+    /* Las columnas de RESPUESTAS pasan a 1 por fila: el dedo no se equivoca.
+       Se excluye el HUD, que debe seguir leyendose en una sola mirada. */
+    [data-testid="stHorizontalBlock"]:not(:has(.mq-hud-id)) > [data-testid="column"] {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    /* El HUD si se reparte, pero sin romperse: la identidad ocupa la fila
+       de arriba y gemas + nivel comparten la de abajo. */
+    [data-testid="stHorizontalBlock"]:has(.mq-hud-id) {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+    [data-testid="stHorizontalBlock"]:has(.mq-hud-id) > [data-testid="column"] {
+        min-width: 0 !important;
+    }
+    [data-testid="stHorizontalBlock"]:has(.mq-hud-id) > [data-testid="column"]:first-child {
+        flex: 1 1 100% !important;
+    }
+    [data-testid="stHorizontalBlock"]:has(.mq-hud-id) h3 {
+        font-size: 19px !important;
+        margin: 0 !important;
+    }
+}
+
+/* --- Movil ---------------------------------------------------------------- */
+@media (max-width: 520px) {
+    :root {
+        --mq-fs-base: 16px;
+        --mq-fs-lg:   19px;
+        --mq-fs-answer: 21px;
+    }
+    .block-container { padding: .9rem .7rem 3.5rem !important; }
+    h1 { font-size: 26px !important; }
+    h2 { font-size: 22px !important; }
+    h3 { font-size: 19px !important; }
+
+    .question-card { padding: 18px 14px !important; }
+    .question-card, .shop-card { border-bottom-width: 6px !important; }
+
+    /* Pestanias: fila unica scrollable. Envolverlas comeria media pantalla. */
+    .stTabs [data-baseweb="tab-list"] { flex-wrap: nowrap !important; gap: 6px; }
+    .stTabs [data-baseweb="tab"] {
+        padding: 9px 12px !important;
+        font-size: 14px !important;
+        min-height: 48px;            /* el objetivo tactil se mantiene */
+    }
+
+    /* Botones de respuesta: el objetivo tactil NO se reduce nunca */
+    .stButton > button { min-height: 54px !important; font-size: var(--mq-fs-answer) !important; }
+
+    .fraction-visual { font-size: 22px; letter-spacing: 3px; }
+    .logo-container { padding: 12px; margin-bottom: 18px; }
+    .logo-img { max-width: 110px; }
+
+    /* El sidebar en movil es un panel deslizante: el bloque se compacta */
+    .mq-feedback { margin-top: 20px; padding: 13px 11px; }
+    .mq-feedback-title { font-size: 15px; }
+    .mq-feedback-body { font-size: 12px !important; }
+    .mq-feedback-cta { font-size: 14px; }
+
+    /* HUD apilado: identidad arriba, contadores en una fila compacta */
+    .mq-hud .mq-hud-name { font-size: 18px !important; }
+    .mq-hud h3 { font-size: 17px !important; }
+}
+
+/* --- Movil pequenio (iPhone SE, Android de gama baja) --------------------- */
+@media (max-width: 380px) {
+    .block-container { padding-left: .55rem !important; padding-right: .55rem !important; }
+    h1 { font-size: 23px !important; }
+    .question-card { padding: 15px 12px !important; }
+    .stTabs [data-baseweb="tab"] { padding: 8px 10px !important; font-size: 13px !important; }
+    .stButton > button { font-size: 19px !important; padding-left: 10px !important; padding-right: 10px !important; }
+    .mq-hud .mq-hud-name { font-size: 16px !important; }
+}
+
+/* --- Movil en horizontal: hay ancho, pero casi nada de alto --------------- */
+@media (max-height: 500px) and (orientation: landscape) {
+    .block-container { padding-top: .6rem !important; padding-bottom: 2rem !important; }
+    h1 { font-size: 24px !important; }
+    .question-card { padding: 14px 16px !important; margin-bottom: 14px !important; }
+    .stTabs [data-baseweb="tab"] { min-height: 44px; padding: 8px 14px !important; }
+    .logo-container { display: none; }   /* el logo no cabe y no es esencial */
+    .mq-feedback { margin-top: 14px; padding: 10px; }
+    .mq-feedback-body { display: none; }  /* el titulo y el boton bastan */
+}
+
+/* --- Pantalla grande / proyector de aula ---------------------------------- */
+@media (min-width: 1400px) {
+    .block-container { max-width: 1000px; }
+}
+
+/* --- Fallback para navegadores sin :has() (Firefox < 121, WebViews viejos) --
+   Sin :has() el HUD se apila como cualquier otra fila. Es peor, pero legible:
+   nunca queda cortado ni provoca scroll horizontal. */
+@supports not selector(:has(*)) {
+    @media (max-width: 780px) {
+        [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+            min-width: 100% !important;
+        }
+        .mq-hud-name { white-space: normal; }
+    }
+}
+
+/* --- Tienda en movil ------------------------------------------------------
+   Las tarjetas se compactan para que quepan dos por fila hasta 520px y una
+   sola por debajo; el boton de comprar siempre a ancho completo. */
+@media (max-width: 780px) {
+    .shop-card { padding: 16px 12px !important; margin-bottom: 8px; }
+    .shop-card img { width: 54px !important; height: 54px !important; }
+    .shop-card div:nth-of-type(1) { font-size: 16px !important; }
+    .shop-card div:nth-of-type(2) { font-size: 12px !important; }
+    /* El hover con rotacion no aplica en tactil y provoca saltos: se anula. */
+    .shop-card:hover { transform: none; box-shadow: var(--mq-shadow); }
+}
+
+/* --- Dispositivos tactiles (sin puntero fino) -----------------------------
+   Los efectos :hover se quedan "pegados" tras un toque en tablet/movil.
+   Se desactivan y se refuerza el feedback de :active, que si es real. */
+@media (hover: none) and (pointer: coarse) {
+    .stButton > button:hover,
+    .stTabs [data-baseweb="tab"]:hover,
+    .shop-card:hover,
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        transform: none !important;
+    }
+    .stButton > button:active { transform: translateY(3px) !important; }
 }
 
 /* -----------------------------------------------------------------------------
@@ -1286,7 +1553,14 @@ def renderizar_avatar_dinamico(img_base, img_casco=None, img_escudo=None, img_ma
     if img_mascota:
         capas += f'<img src="{img_mascota}" style="position:absolute; bottom:0%; left:-15%; width:40%; height:40%; object-fit:contain; z-index:3;" />'
 
-    return f'<div style="position:relative; width:{size}px; height:{size}px; display:inline-block; vertical-align:middle; background:#f1f5f9; border-radius:50%; border:3px solid #cbd5e1; flex-shrink:0;">{capas}</div>'
+    # El avatar escala con el viewport pero nunca baja de 56px (sigue reconocible)
+    # ni pasa de `size` (no debe robarle protagonismo a la pregunta).
+    dim = f"clamp(56px, 14vw, {size}px)"
+    return (
+        f'<div style="position:relative; width:{dim}; height:{dim}; aspect-ratio:1/1; '
+        f'display:inline-block; vertical-align:middle; background:#f1f5f9; '
+        f'border-radius:50%; border:3px solid #cbd5e1; flex-shrink:0;">{capas}</div>'
+    )
 
 # -----------------------------------------------------------------------------
 # 5. DICCIONARIOS Y NAVEGACIÓN BILINGÜE
@@ -1325,6 +1599,9 @@ TEXTS = {
         "correct": "¡Excelente Trabajo! +10 Gemas 🎉",
         "incorrect": "¡Casi! Lee la pista arriba y vuelve a intentarlo.",
         "shop_caption": "🛒 **Tienda del Guardián:** Personaliza tu personaje con tus gemas.",
+        "fb_title": "¿Nos ayudas a mejorar?",
+        "fb_body": "Cuéntanos qué te pareció Math Quest. Toma menos de 2 minutos.",
+        "fb_cta": "📝 Dejar mi opinión",
         "buy": "Comprar", "equip": "✨ Equipar", "unequip": "❌ Desequipar", "no_gems": "¡Gemas insuficientes!",
         "step1_title": "Paso 1: Análisis Inicial",
         "step2_title": "Paso 2: Solución Final",
@@ -1355,6 +1632,9 @@ TEXTS = {
         "correct": "Awesome Job! +10 Gems 🎉",
         "incorrect": "Almost! Check the hint above and try again.",
         "shop_caption": "🛒 **Guardian Shop:** Use your gems to customize your hero.",
+        "fb_title": "Help us improve",
+        "fb_body": "Tell us what you think of Math Quest. It takes under 2 minutes.",
+        "fb_cta": "📝 Share your feedback",
         "buy": "Buy", "equip": "✨ Equip", "unequip": "❌ Unequip", "no_gems": "Not enough gems!",
         "step1_title": "Step 1: Initial Analysis",
         "step2_title": "Step 2: Final Solution",
@@ -1370,6 +1650,10 @@ TEXTS = {
 }
 
 t = TEXTS[lang]
+
+# Encuesta de feedback (Streamlit Community Cloud). Se abre en pestania
+# nueva para no sacar al nino de la partida en curso.
+FORM_FEEDBACK_URL = "https://forms.gle/wzVK4AeYFXP8jEpE7"
 
 CDN_BASE = "https://openmoji.org/data/color/svg"
 PERSONAJES_BASE = {
@@ -1387,6 +1671,22 @@ TIENDA_ITEMS = {
     "gato_sabio": {"nombre": "Astro Cat" if lang == "English" else "Gato Astro", "img": f"{CDN_BASE}/1F431.svg", "precio": 40, "tipo": "Mascota"},
     "escudo_estelar": {"nombre": "Cosmic Shield" if lang == "English" else "Escudo Cósmico", "img": f"{CDN_BASE}/1F6E1.svg", "precio": 50, "tipo": "Escudo"},
 }
+
+# --- Encuesta de opinion en la barra lateral ------------------------------
+# Va al final del sidebar (no compite con Ajustes) y usa <a> nativo en vez de
+# st.link_button para poder controlar el tamanio tactil desde el CSS.
+with st.sidebar:
+    st.markdown(
+        f"""
+        <div class="mq-feedback">
+            <div class="mq-feedback-title">💬 {t["fb_title"]}</div>
+            <p class="mq-feedback-body">{t["fb_body"]}</p>
+            <a class="mq-feedback-cta" href="{FORM_FEEDBACK_URL}"
+               target="_blank" rel="noopener noreferrer">{t["fb_cta"]}</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # Inicialización de Estados
 if "prob_data" not in st.session_state: nuevo_reto_problemas_texto(lang)
@@ -1447,9 +1747,17 @@ avatar_html = renderizar_avatar_dinamico(
     TIENDA_ITEMS[m_id]["img"] if m_id else None
 )
 
+# El HUD es la unica fila que NO debe apilarse en una columna por linea:
+# "quien soy / cuantas gemas / que nivel" se lee de un vistazo o no sirve.
+# No se puede poner una clase en el stHorizontalBlock que crea st.columns, asi
+# que se marca desde dentro (.mq-hud-id) y el CSS lo alcanza con :has().
 c1, c2, c3 = st.columns([2.5, 1, 1])
 with c1:
-    st.markdown(f'<div style="display:flex; align-items:center; gap:12px;">{avatar_html}<span style="font-size:22px; font-weight:800; color:#0f172a;">{st.session_state.estudiante_nombre}</span></div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="mq-hud-id">{avatar_html}'
+        f'<span class="mq-hud-name">{st.session_state.estudiante_nombre}</span></div>',
+        unsafe_allow_html=True,
+    )
 with c2: st.markdown(f"### 💎 `{st.session_state.gemas}`")
 with c3: st.markdown(f"### ⭐ {t['level']} `{st.session_state.nivel}`")
 
